@@ -4,10 +4,11 @@
 <meta name="apple-mobile-web-app-title" content="Arpero Family"><meta name="theme-color" content="#0f2d52">
 <link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" href="favicon-32.png">
 <title>Arpero Family</title>
-<style>
+<link rel="preload" href="fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin><style>@font-face{font-family:Nunito;font-style:normal;font-weight:400 900;font-display:swap;src:url(fonts/nunito-latin.woff2) format('woff2')}
+
 :root{--g:#0f2d52;--o:#f26a1b;--bg:#f2f2f7;--c:#fff;--t:#111827;--m:#8a8f98;--line:#e5e5ea;--r:#d1402b;--teal:#0f2d52;--gold:#f7a325}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--t);font:17px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;touch-action:manipulation;-webkit-font-smoothing:antialiased}
+html,body{margin:0;background:var(--bg);color:var(--t);font:17px/1.4 Nunito,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-weight:500;touch-action:manipulation;-webkit-font-smoothing:antialiased}
 input,select,textarea,button{font-size:16px;font-family:inherit}
 input,select,textarea{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--t);-webkit-appearance:none;appearance:none}
 select{background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a8f98' stroke-width='2' fill='none'/%3E%3C/svg%3E") no-repeat right 14px center}
@@ -16,7 +17,7 @@ button{border:0;border-radius:12px;padding:12px 16px;background:var(--g);color:#
 button.s{background:#fff;color:var(--g);border:1px solid var(--line)}button.d{background:none;color:var(--r);padding:6px 8px;font-weight:500}
 button:active{opacity:.7}
 header{position:sticky;top:0;z-index:5;background:rgba(242,242,247,.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);padding:calc(env(safe-area-inset-top) + 14px) 20px 10px;display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
-h1{font:700 30px/1.1 ui-serif,"New York",Georgia,serif;color:var(--g);margin:0;letter-spacing:-.3px}
+h1{font:800 30px/1.1 Nunito,system-ui,sans-serif;color:var(--g);margin:0;letter-spacing:-.4px}
 h2{font-size:20px;font-weight:700;color:var(--g);margin:24px 4px 10px}
 .sub{color:var(--m);font-size:14px}
 main{padding:4px 16px calc(100px + env(safe-area-inset-bottom))}
@@ -64,8 +65,17 @@ a{color:var(--g)}
 #gTyped{min-height:48px;border-radius:12px}.gaddbig{width:100%;min-height:52px;font-size:17px;margin:4px 0 6px;border-radius:14px}
 .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 6px}.tile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:96px;padding:12px 6px;background:#fff;border-radius:18px;box-shadow:0 1px 3px rgba(0,0,0,.06);color:var(--g)}
 .tile:active{transform:scale(.97);background:#fff4ec}.ti{font-size:30px;line-height:1}.tl{font-size:14px;font-weight:600;line-height:1.2;text-align:center}.tb{position:absolute;top:8px;right:8px;min-width:22px;height:22px;border-radius:11px;background:var(--o);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 6px}
+button,input,select,textarea{font-family:inherit}b,strong{font-weight:800}
+#login{padding:calc(9vh + env(safe-area-inset-top)) 24px 40px;text-align:center;background:#fff;min-height:100vh;box-sizing:border-box}
+.brand-emb{width:min(260px,70vw);display:block;margin:0 auto 6px}
+.brand{font:900 40px/1.05 Nunito,system-ui,sans-serif;letter-spacing:-.8px;color:var(--g);margin:6px 0 0}.brand em{font-style:normal;color:var(--o)}
+.brand-est{display:inline-block;margin:10px 0 4px;font-size:13px;font-weight:800;letter-spacing:2px;color:var(--m);text-transform:uppercase}
+.brand-hi{font-size:19px;font-weight:700;color:var(--t);margin:18px 0 26px}
+.hhead{display:flex;align-items:center;gap:12px}.hemb{width:58px;height:58px;border-radius:16px;background:#fff;box-shadow:0 2px 8px rgba(15,45,82,.12);object-fit:contain;padding:4px;box-sizing:border-box;flex:0 0 auto}
+.htitle{font:900 28px/1.05 Nunito,system-ui,sans-serif;letter-spacing:-.6px;color:var(--g)}.htitle em{font-style:normal;color:var(--o)}
+.hhi{font-size:16px;font-weight:700;color:var(--m);margin-top:3px}
 </style></head><body>
-<div id="login" hidden><img src="logo.png" alt="Arpero Family" style="width:220px"><p class="sub">Est. 2023 · Our home, our team</p>
+<div id="login" hidden><img src="emblem.jpg" alt="" class="brand-emb"><div class="brand">Arpero <em>Family</em></div><div class="brand-est">Est. 2023 · Our home, our team</div><div class="brand-hi" id="lhi"></div>
 <div id="lmain"><button id="gbtn" style="width:100%;max-width:320px">Sign in with Google</button><br><br><button id="ebtn" class="s" style="width:100%;max-width:320px">Sign in with email</button></div>
 <div id="lemail" hidden style="max-width:320px;margin:auto;text-align:left">
  <label class="sub">Your email</label><input id="lem" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com">
@@ -76,13 +86,16 @@ a{color:var(--g)}
  <p class="center sub"><a href="#" id="lback">← Back</a></p></div>
 <p id="lmsg" class="sub"></p></div>
 <div id="app" hidden>
-<header><div style="flex:1"><h1 id="ttl">Arpero Family</h1><div class="sub" id="who" style="margin-top:4px;font-size:16px"></div></div><button class="s n" id="addBtn" style="border-radius:20px;padding:8px 14px">＋ Add</button></header>
+<header><div style="flex:1" class="hhead"><img src="emblem.jpg" alt="" class="hemb" id="hemb"><div style="flex:1;min-width:0"><h1 id="ttl">Arpero Family</h1><div class="sub" id="who" style="margin-top:4px;font-size:16px"></div></div></div><button class="s n" id="addBtn" style="border-radius:20px;padding:8px 14px">＋ Add</button></header>
 <main id="main"></main>
 <nav id="nav"></nav></div>
 <div id="sheet"></div>
 <script src="parse.js"></script>
 <script type="module">
 const V='https://www.gstatic.com/firebasejs/11.10.0/';
+const chiHour=()=>+new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',hourCycle:'h23'}).format(new Date())%24;
+const greet=()=>{const h=chiHour();return h<5?'Good evening':h<12?'Good morning':h<17?'Good afternoon':'Good evening'};
+{const e=document.getElementById('lhi');if(e)e.textContent=greet()+' 👋';}
 const [{initializeApp},A,F]=await Promise.all([import(V+'firebase-app.js'),import(V+'firebase-auth.js'),import(V+'firebase-firestore.js')]);
 const fb=initializeApp({apiKey:"AIzaSyCBmD2yN0DkDWkGBR9RDS4ApqVs13pSGC4",authDomain:"arpero-shop.firebaseapp.com",projectId:"arpero-shop",storageBucket:"arpero-shop.firebasestorage.app",messagingSenderId:"404661227591"},'family');
 const auth=A.getAuth(fb);await A.setPersistence(auth,A.browserLocalPersistence);
@@ -168,8 +181,8 @@ function R(){pulseSoon();
  const openFix=S.fixes.filter(f=>f.status!=='fixed'&&(S.me!=='oscar'||f.at>S.seenFix||f.status==='open')).length;
  $('#nav').innerHTML=TABS.map(([k,i,l])=>`<button class="${S.tab===k?'on':''}" data-t="${k}">${icon(i)}${l}${k==='more'&&openFix?`<span class="badge">${openFix}</span>`:''}</button>`).join('');
  $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.t;S.sub=null;if(S.tab==='fix'){S.seenFix=Date.now();localStorage.seenFix=S.seenFix}R();scrollTo(0,0)});
- checkCh();$('#ttl').textContent=S.tab==='home'?'Arpero Family':S.sub?SUBS.find(x=>x[0]===S.sub)[2]:S.tab==='fix'?'Fix It':TABS.find(t=>t[0]===S.tab)[2];
- const st=stats(),h=new Date().getHours();$('#who').textContent=S.tab==='home'?`Good ${h<12?'morning':h<17?'afternoon':'evening'}, ${nm(S.me)} 🧡`:`Team level ${st.lvl} · 🔥 ${st.st}-day streak`;$('#who').style.display=S.tab==='home'||!S.sub?'':'none';
+ checkCh();$('#hemb').style.display=S.tab==='home'?'':'none';$('#ttl').className=S.tab==='home'?'htitle':'';$('#who').className=S.tab==='home'?'hhi':'sub';if(S.tab==='home')$('#ttl').innerHTML='Arpero <em>Family</em>';else $('#ttl').textContent=S.sub?SUBS.find(x=>x[0]===S.sub)[2]:S.tab==='fix'?'Fix It':TABS.find(t=>t[0]===S.tab)[2];
+ const st=stats(),h=new Date().getHours();$('#who').textContent=S.tab==='home'?`${greet()}, ${nm(S.me)} 🧡`:`Team level ${st.lvl} · 🔥 ${st.st}-day streak`;$('#who').style.display=S.tab==='home'||!S.sub?'':'none';
  $('#addBtn').hidden=!['todos','pantry','fix'].includes(S.tab);
  $('#main').innerHTML=S.sub?(S.sub!=='more'?'<a href="#" data-sub="" style="display:inline-block;margin:2px 4px 6px;font-size:17px;text-decoration:none">‹ More</a>':'')+VIEWS[S.sub]():(S.tab==='cal'?'':({home:vHome,todos:vTodos,pantry:vPantry,fix:vFix,more:vMore})[S.tab]());if(S.tab==='cal'&&calApi){$('#main').append(calEl);calApi.render()}
  bind()}
