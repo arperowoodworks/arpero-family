@@ -17,3 +17,5 @@ near(safeCalc(4000,0,0,-500),4000); // never above income
 near(safeCalc(1000,1500,0,0),0); // never negative
 assert.ok(safeCalc(3000,1000,100,50)<=3000);
 console.log('safe-to-spend tests passed');
+{const m=h.match(/const billMo=[^\n]+/)[0];const billMo=new Function(m+';return billMo')();
+near(billMo({amt:1592.61,freq:'biweekly'}),3450.66);near(billMo({amt:69,freq:'monthly'}),69);near(billMo({amt:'',freq:'biweekly'}),0);console.log('bill frequency tests passed')}

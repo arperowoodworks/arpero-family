@@ -163,6 +163,20 @@ if (settings.hb?.setup && hm >= '08:00') {
   const bills = await store.col(`${BASE}/bills`);
   for (const b of bills) {
     if (b.auto) continue;
+    if (b.freq === 'biweekly') {
+      if (!b.next) continue;
+      const dd = Math.round((Date.parse(day + 'T12:00Z') - Date.parse(b.next + 'T12:00Z')) / 864e5), d3 = dd + 3, mod = n => ((n % 14) + 14) % 14;
+      const which = mod(dd) === 0 ? 'day' : mod(d3) === 0 ? 'pre' : '';
+      const date = which === 'day' ? day : which === 'pre' ? in3 : '';
+      if (!which || (b.paid || {})[date]) continue;
+      const key = `${b.id}:${date}:${which}`;
+      if (bnsent[key]) continue;
+      const amt = '$' + (+b.amt || 0).toLocaleString('en-US');
+      const msg = which === 'day' ? { title: `💵 ${b.name} is due today`, body: `${amt} · tap to mark it paid.` } : { title: `💵 ${b.name} due in 3 days`, body: `${amt} on ${new Date(date + 'T12:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.` };
+      for (const k of ['oscar', 'wife']) if ((settings.hb.billN || {})[k] !== false) await push(k, { ...msg, go: 'budget', tag: 'bill-' + b.id }, true);
+      bnsent[key] = day;
+      continue;
+    }
     for (const m of [ym, in3.slice(0, 7)]) {
       const mm = +m.slice(5, 7);
       if (b.freq === 'quarterly' && ((mm - (+b.start || 1)) % 3 + 3) % 3) continue;
