@@ -23,18 +23,26 @@ if (MOCK_FILE) {
     col: async c => Object.entries(D).filter(([k]) => k.startsWith(c + '/') && !k.slice(c.length + 1).includes('/')).map(([k, v]) => ({ id: k.split('/').pop(), ...v })),
     set: async (p, v) => { D[p] = { ...(D[p] || {}), ...v }; fs.writeFileSync(MOCK_FILE, JSON.stringify(D, null, 1)); },
     del: async p => { delete D[p]; fs.writeFileSync(MOCK_FILE, JSON.stringify(D, null, 1)); },
+    ids: async c => [...new Set(Object.keys(D).filter(k => k.startsWith(c + '/')).map(k => k.split('/')[1]))],
+    email: async uid => (D._users || {})[uid] || '',
+    delField: async (p, f, id) => { const o = D[p]?.[f]; if (o) delete o[id]; fs.writeFileSync(MOCK_FILE, JSON.stringify(D, null, 1)); },
   };
 } else {
   if (!FIREBASE_SA) { log('::warning::FIREBASE_SA secret missing (add the service-account JSON as a repo secret). Nothing sent.'); process.exit(0); }
   const { initializeApp, cert } = await import('firebase-admin/app');
   const { getFirestore } = await import('firebase-admin/firestore');
   initializeApp({ credential: cert(JSON.parse(FIREBASE_SA)) });
+  const { getAuth } = await import('firebase-admin/auth');
+  const { FieldValue } = await import('firebase-admin/firestore');
   const db = getFirestore();
   store = {
     doc: async p => { const s = await db.doc(p).get(); return s.exists ? s.data() : null; },
     col: async (c, fields) => { let q = db.collection(c); if (fields) q = q.select(...fields); return (await q.get()).docs.map(d => ({ id: d.id, ...d.data() })); },
     set: (p, v) => db.doc(p).set(v, { merge: true }),
     del: p => db.doc(p).delete(),
+    ids: async c => (await db.collection(c).listDocuments()).map(d => d.id),
+    email: async uid => { try { return (await getAuth().getUser(uid)).email || ''; } catch { return ''; } },
+    delField: (p, f, id) => db.doc(p).update({ [`${f}.${id}`]: FieldValue.delete() }),
   };
 }
 
@@ -102,6 +110,52 @@ for (const k of ['oscar', 'wife']) {
   const msg = nudgeFor(k);
   if (!msg) continue;
   if (await push(k, { ...msg, go: 'home', tag: 'nudge' })) sent[k] = day;
+}
+
+// ================= Arpero Shop (Oscar only) =================
+// Data: shops/{uid}/data/state {state: JSON}, shops/{uid}/data/notify {on, time, subs:{id:{sub}}}, shops/{uid}/data/pushstate (sender-owned)
+const OSCAR = 'oskararpero@gmail.com';
+const addD = (d, n) => { const x = new Date(d + 'T12:00'); x.setDate(x.getDate() + n); return x.toLocaleDateString('en-CA'); };
+const tomorrow = addD(day, 1);
+const fmtD = d => new Date(d + 'T12:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+async function shopPush(uid, subsMap, msg) {
+  let ok = false;
+  for (const [id, v] of Object.entries(subsMap || {})) {
+    if (!v?.sub?.endpoint) continue;
+    try { await webpush.sendNotification(v.sub, JSON.stringify(msg), { TTL: 6 * 3600 }); ok = true; sentCount++; log(`shop sent [${id}]: ${msg.title} — ${msg.body}`); }
+    catch (e) { log(`shop push error [${id}]: ${e.statusCode || ''} ${e.body || e.message}`); if (e.statusCode === 404 || e.statusCode === 410) await store.delField(`shops/${uid}/data/notify`, 'subs', id); }
+  }
+  return ok;
+}
+let famEvents = null;
+for (const uid of await store.ids('shops')) {
+  const nt = await store.doc(`shops/${uid}/data/notify`);
+  if (!nt || nt.on === false || !Object.keys(nt.subs || {}).length) continue;
+  if ((await store.email(uid)).toLowerCase() !== OSCAR) { log(`shop ${uid}: not Oscar, skipped`); continue; }
+  if (hm < (nt.time || '07:30')) continue;
+  const st = await store.doc(`shops/${uid}/data/state`);
+  let S = {}; try { S = typeof st?.state === 'string' ? JSON.parse(st.state) : (st?.state || st || {}); } catch { }
+  const ps = (await store.doc(`shops/${uid}/data/pushstate`)) || {};
+  const alerted = Object.fromEntries(Object.entries(ps.alerted || {}).filter(([, d]) => d === day));
+  const open = (S.projects || []).filter(p => !p.done && p.due);
+  // 1) morning summary (max one a day): projects due today + shop calendar events today
+  if (ps.summary !== day) {
+    famEvents ??= await store.col('families/arpero/events', ['title', 'src', 'kind', 's', 'auto']);
+    const ev = famEvents.filter(e => (e.src === 'shop' || e.kind === 'shop') && !e.auto && String(e.s || '').slice(0, 10) === day);
+    const items = [...open.filter(p => p.due === day).map(p => p.name), ...ev.map(e => (String(e.s).length > 10 ? String(e.s).slice(11, 16) + ' ' : '') + e.title)];
+    if (items.length && await shopPush(uid, nt.subs, { title: `🪵 Shop today: ${items.length} item${items.length > 1 ? 's' : ''}`, body: items.slice(0, 4).join(' · ') + (items.length > 4 ? ` +${items.length - 4} more` : ''), go: 'cal', tag: 'shop-summary' })) ps.summary = day;
+    else if (!items.length) ps.summary = day; // nothing today: don't keep checking
+  }
+  // 2) per-project alerts, at most once per project per day
+  const due = open.filter(p => p.due <= tomorrow && alerted[p.id] !== day).sort((a, b) => a.due.localeCompare(b.due)).slice(0, 5);
+  for (const p of due) {
+    const od = p.due < day, n = od ? Math.round((new Date(day) - new Date(p.due)) / 864e5) : 0;
+    const msg = od ? { title: `⏰ Overdue: ${p.name}`, body: `Was due ${fmtD(p.due)} (${n} day${n > 1 ? 's' : ''} ago) · ${p.pct || 0}% done` }
+      : p.due === day ? { title: `📌 Due today: ${p.name}`, body: `${p.customer ? p.customer + ' · ' : ''}${p.pct || 0}% done` }
+        : { title: `📅 Due tomorrow: ${p.name}`, body: `${p.customer ? p.customer + ' · ' : ''}${p.pct || 0}% done` };
+    if (await shopPush(uid, nt.subs, { ...msg, go: 'p:' + p.id, tag: 'proj-' + p.id })) alerted[p.id] = day;
+  }
+  await store.set(`shops/${uid}/data/pushstate`, { summary: ps.summary || '', alerted, ranAt: Date.now() });
 }
 
 await store.set(`${BASE}/meta/pushstate`, { fixAt: newFixAt, shoutAt: newShoutAt, sent, ranAt: Date.now() });
