@@ -56,6 +56,12 @@ img.ph{width:100%;max-height:260px;object-fit:cover;border-radius:14px;margin-to
 .sec{display:flex;justify-content:space-between;align-items:baseline}.sec a{color:var(--m);font-size:15px;text-decoration:none}
 a{color:var(--g)}
 #login{padding:12vh 24px;text-align:center}
+.gcats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.gcat{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 12px;border-radius:12px;background:#fff;border:1px solid var(--line);color:var(--t);font-size:15px;font-weight:500;text-align:left}.gcat span{font-size:20px}.gcat.on{border-color:var(--o);background:#fff4ec;box-shadow:0 0 0 1px var(--o)}
+.gchips{display:flex;flex-wrap:wrap;gap:8px}.gchip{min-height:44px;padding:0 14px;border-radius:22px;background:#fff;border:1px solid var(--line);color:var(--t);font-size:15px;font-weight:500}.gchip:active{background:#fff4ec}.gchip:disabled{opacity:.4}
+.ghead{font-size:13px;font-weight:600;color:var(--m);text-transform:uppercase;letter-spacing:.4px;margin:14px 4px 6px}.gsthead{display:flex;align-items:baseline;gap:8px;margin-top:20px}
+.grow{gap:10px}.step{display:flex;align-items:center;background:#f2f2f7;border-radius:12px}.step button{width:40px;height:44px;background:none;color:var(--t);font-size:22px;padding:0}.step span{min-width:20px;text-align:center;font-weight:600}
+.gstore{min-width:72px;height:44px;border-radius:12px;font-size:14px;font-weight:600;padding:0 10px;background:#f2f2f7;color:var(--t)}.s-aldi{background:#e8eef8;color:#0f2d52}.s-walmart{background:#fff4ec;color:#c4500f}
+#gTyped{min-height:48px;border-radius:12px}.gaddbig{width:100%;min-height:52px;font-size:17px;margin:4px 0 6px;border-radius:14px}
 </style></head><body>
 <div id="login" hidden><img src="logo.png" alt="Arpero Family" style="width:220px"><p class="sub">Est. 2023 · Our home, our team</p>
 <div id="lmain"><button id="gbtn" style="width:100%;max-width:320px">Sign in with Google</button><br><br><button id="ebtn" class="s" style="width:100%;max-width:320px">Sign in with email</button></div>
@@ -83,7 +89,7 @@ const OSCAR='oskararpero@gmail.com';
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 const today=()=>new Date().toLocaleDateString('en-CA'),uid=()=>Math.random().toString(36).slice(2,10);
 const col=n=>F.collection(db,'families','arpero',n),dref=(n,id)=>F.doc(db,'families','arpero',n,id);
-const S={todos:[],items:[],logs:[],fixes:[],meta:{names:{oscar:'Oscar',wife:'Kerissa'}},tab:'home',sub:null,pantrySeg:'stock',meals:[],chores:[],rewards:[],maint:[],ideas:[],dates:[],shop:[],shouts:[],me:null,cmp:'week',seenFix:+localStorage.seenFix||0};
+const S={todos:[],items:[],logs:[],fixes:[],meta:{names:{oscar:'Oscar',wife:'Kerissa'}},tab:'home',sub:null,pantrySeg:'stock',meals:[],chores:[],rewards:[],maint:[],ideas:[],dates:[],shop:[],shouts:[],me:null,cmp:'week',grocmem:{},gstore:localStorage.gstore||'all',seenFix:+localStorage.seenFix||0};
 {const g=new URLSearchParams(location.search).get('go');if(g==='fix')S.tab='fix';else if(g)S.tab='home'}
 if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.go){S.tab=e.data.go==='fix'?'fix':'home';S.sub=null;typeof R==='function'&&R();scrollTo(0,0)}});
 const who=e=>(e||'').toLowerCase()===OSCAR?'oscar':'wife',nm=k=>{const v=S.meta.names?.[k];return (v&&v!=='Wife'?v:0)||({oscar:'Oscar',wife:'Kerissa'})[k]||k};
@@ -118,6 +124,7 @@ A.onAuthStateChanged(auth,u=>{unsubs.forEach(f=>f());unsubs=[];
 function startListeners(u){unsubs.forEach(f=>f());unsubs=[];if(!u)return;setTimeout(refreshSub,2500);
  if(!calApi){import('./cal.js?v=8').then(m=>{calApi=m.initCal({db,F,me:S.me,el:calEl,app:'family',names:{oscar:nm('oscar'),wife:nm('wife')}});if(S.tab==='cal')R()})}
  for(const n of ['todos','items','logs','fixes','meals','chores','rewards','maint','ideas','dates','shop','shouts'])unsubs.push(F.onSnapshot(col(n),s=>{S[n]=s.docs.map(d=>d.data());if(n==='fixes')notifyFix();R()},err=>denied(err)));
+ unsubs.push(F.onSnapshot(dref('meta','grocmem'),s=>{S.grocmem=s.exists()?s.data():{};if(S.tab==='pantry')R()},()=>{}));
  unsubs.push(F.onSnapshot(dref('meta','settings'),s=>{if(s.exists())S.meta=s.data();R()},()=>{}));
 }
 let retried=0;function denied(e){console.error('Firestore listener error',e);const c=e&&e.code||'';
@@ -293,12 +300,64 @@ const addDays=(d,n)=>{const x=new Date(d+'T12:00');x.setDate(x.getDate()+n);retu
 const daysTo=d=>Math.round((new Date(d+'T12:00')-new Date(today()+'T12:00'))/864e5);
 const lowItems=()=>S.items.filter(i=>i.min&&itemStock(i)<=i.min);
 const segP=()=>`<div class="seg">${[['stock','In stock'],['shop',`Shopping list (${lowItems().length+S.shop.filter(x=>!x.done).length})`]].map(([k,l])=>`<button data-pseg="${k}" class="${S.pantrySeg===k?'on':''}">${l}</button>`).join('')}</div>`;
-function vShop(){const low=lowItems(),man=S.shop.filter(x=>!x.done);
- return `<p class="sub">Items at or below their low level show up here automatically. Tap the circle when it's in the cart.</p>`+
- low.map(i=>`<div class="card row"><button class="chk n" data-lowbuy="${i.id}"></button><div><b>${esc(i.name)}</b><div class="sub">Have ${+itemStock(i).toFixed(2)} ${esc(i.unit)} · auto</div></div></div>`).join('')+
- man.map(x=>`<div class="card row"><button class="chk n" data-shopdone="${x.id}"></button><div><b>${esc(x.name)}</b><div class="sub">${x.note?esc(x.note):'added by '+esc(nm(x.by))}</div></div><button class="d n" data-shopdel="${x.id}">✕</button></div>`).join('')+
- (!low.length&&!man.length?'<p class="sub">List is empty 🎉 Tap ＋ Add for anything extra.</p>':'')}
-function addShop(name='',note=''){sheet(`<h2>Add to shopping list</h2><label>Item</label><input id="sn" value="${esc(name)}">`,()=>{if(!val('sn'))return false;save('shop',{id:uid(),name:val('sn'),note,by:S.me,at:Date.now(),done:false})})}
+function vShop(){const low=lowItems(),man=S.shop.filter(x=>!x.done),f=S.gstore||'all';
+ const rows=[...low.filter(i=>!man.some(x=>gkey(x.name)===gkey(i.name))).map(i=>({low:true,id:i.id,name:i.name,cat:gguess(i.name)||'Pantry',store:gmem(i.name).store||'Either',sub:`Have ${+itemStock(i).toFixed(2)} ${i.unit||''} · running low`})),
+  ...man.map(x=>({id:x.id,name:x.name,cat:x.cat||gguess(x.name)||'Pantry',store:x.store||gmem(x.name).store||'Either',qty:x.qty||1,sub:x.note||''}))];
+ const vis=rows.filter(r=>f==='all'||r.store===f||r.store==='Either');
+ const row=r=>`<div class="card row grow"><button class="chk n" ${r.low?`data-lowbuy="${r.id}"`:`data-shopdone="${r.id}"`} aria-label="Got it"></button>
+  <div style="flex:1;min-width:0"><b>${esc(r.name)}</b>${r.sub?`<div class="sub">${esc(r.sub)}</div>`:''}</div>
+  ${r.low?'':`<div class="step"><button class="n" data-qty="${r.id}" data-d="-1" aria-label="Less">−</button><span>${r.qty}</span><button class="n" data-qty="${r.id}" data-d="1" aria-label="More">+</button></div>`}
+  <button class="gstore n s-${r.store.toLowerCase()}" data-gstore="${r.low?'L':''}${r.id}" data-name="${esc(r.name)}">${r.store}</button></div>`;
+ const byCat=(list,order)=>order.filter(c=>list.some(r=>r.cat===c)).map(c=>`<div class="ghead">${GICON[c]} ${c}</div>${list.filter(r=>r.cat===c).map(row).join('')}`).join('');
+ let body='';
+ if(f==='all')for(const st of GSTORES){const L=vis.filter(r=>r.store===st);if(L.length)body+=`<h2 class="gsthead">${st==='Either'?'Either store':st} <span class="sub">${L.length}</span></h2>`+byCat(L,GAISLE[st]||GCATS)}
+ else body=byCat(vis,GAISLE[f]);
+ return `<div class="seg">${[['all','All stores'],['Aldi','Aldi'],['Walmart','Walmart']].map(([k,l])=>`<button data-gfilter="${k}" class="${f===k?'on':''}">${l}</button>`).join('')}</div>
+ <button id="gAddBig" class="gaddbig">＋ Add groceries</button>
+ ${f!=='all'?`<p class="sub">${f} aisle order · includes “Either” items</p>`:''}${body}
+ ${!vis.length?`<p class="sub" style="text-align:center;margin:28px 0">${rows.length?'Nothing for '+f+' 🎉':'List is empty 🎉'}</p>`:''}`}
+// ---------- grocery list: categories, stores, quick picks ----------
+const GCATS=['Produce','Dairy','Meat','Bakery','Pantry','Frozen','Snacks','Drinks','Household','Personal care'];
+const GICON={Produce:'🥦',Dairy:'🥛',Meat:'🥩',Bakery:'🍞',Pantry:'🥫',Frozen:'🧊',Snacks:'🍿',Drinks:'🧃',Household:'🧻','Personal care':'🧴'};
+const GCOMMON={Produce:['Bananas','Apples','Avocados','Tomatoes','Onions','Potatoes','Lettuce','Spinach','Carrots','Strawberries','Lemons','Limes','Garlic','Bell peppers','Cucumbers','Grapes'],
+Dairy:['Milk','Eggs','Butter','Shredded cheese','Sliced cheese','Yogurt','Sour cream','Cream cheese','Half & half','Cottage cheese'],
+Meat:['Chicken breast','Ground beef','Bacon','Sausage','Chicken thighs','Pork chops','Deli turkey','Ham','Salmon','Shrimp','Hot dogs','Steak'],
+Bakery:['Bread','Tortillas','Bagels','Hamburger buns','Hot dog buns','English muffins','Croissants','Muffins'],
+Pantry:['Rice','Pasta','Pasta sauce','Beans','Canned tomatoes','Cereal','Oatmeal','Peanut butter','Flour','Sugar','Olive oil','Salsa','Soup','Coffee','Ketchup','Mayo'],
+Frozen:['Frozen pizza','Frozen veggies','Ice cream','Frozen fruit','Chicken nuggets','Waffles','French fries','Burritos'],
+Snacks:['Chips','Crackers','Granola bars','Popcorn','Pretzels','Cookies','Nuts','Fruit snacks','Tortilla chips'],
+Drinks:['Water','Sparkling water','Juice','Soda','Coffee creamer','Tea','Sports drinks'],
+Household:['Paper towels','Toilet paper','Trash bags','Dish soap','Laundry detergent','Foil','Zip bags','Sponges','Cleaning spray','Napkins'],
+'Personal care':['Toothpaste','Shampoo','Conditioner','Body wash','Deodorant','Soap','Razors','Lotion','Floss','Tissues']};
+const GSTORES=['Aldi','Walmart','Either'];
+const GAISLE={Aldi:['Produce','Bakery','Pantry','Snacks','Drinks','Dairy','Meat','Frozen','Household','Personal care'],Walmart:['Produce','Bakery','Meat','Dairy','Frozen','Pantry','Snacks','Drinks','Personal care','Household']};
+const gkey=n=>String(n||'').trim().toLowerCase();
+const gmem=n=>(S.grocmem||{})[gkey(n).replace(/[.\/~*\[\]]/g,'_')]||{};
+const gguess=n=>{const k=gkey(n);if(gmem(n).cat)return gmem(n).cat;for(const c of GCATS)if(GCOMMON[c].some(x=>x.toLowerCase()===k))return c;const it=S.items.find(i=>gkey(i.name)===k);const m=c=>({'Meat & Fish':'Meat','Dairy & Eggs':'Dairy'})[c]||c;if(it?.cat&&GCATS.includes(m(it.cat)))return m(it.cat);const g=m(guessCat(n));return GCATS.includes(g)&&g!=='Pantry'?g:''};
+const remember=(n,o)=>F.setDoc(dref('meta','grocmem'),{[gkey(n).replace(/[.\/~*\[\]]/g,'_')]:{name:String(n).trim(),...o,at:Date.now()}},{merge:true}).catch(()=>{});
+async function addGroc(name,cat,store,qty=1,note=''){name=String(name).trim();if(!name)return;cat=cat||gguess(name)||'Pantry';store=store||gmem(name).store||'Either';
+ const ex=S.shop.find(x=>!x.done&&gkey(x.name)===gkey(name));
+ if(ex){await save('shop',{...ex,qty:(ex.qty||1)+qty});celebrate(`${name} ×${(ex.qty||1)+qty}`)}else{await save('shop',{id:uid(),name,cat,store,qty,note,by:S.me,at:Date.now(),done:false});celebrate('Added '+name)}
+ remember(name,{cat,store,n:(gmem(name).n||0)+1})}
+function addShop(name='',note=''){let cat=name?gguess(name):'',store='';
+ const draw=()=>{const onList=new Set(S.shop.filter(x=>!x.done).map(x=>gkey(x.name)));
+  const again=[...new Map([...Object.values(S.grocmem||{}).sort((a,b)=>(b.n||0)-(a.n||0)||(b.at||0)-(a.at||0)).map(m=>[gkey(m.name),{name:m.name,cat:m.cat}]),...S.items.map(i=>[gkey(i.name),{name:i.name,cat:gguess(i.name)}])]).values()]
+   .filter(x=>x.name&&(!cat||x.cat===cat||!x.cat)&&!onList.has(gkey(x.name))).slice(0,12);
+  const common=cat?GCOMMON[cat].filter(n=>!onList.has(gkey(n))&&!again.some(a=>gkey(a.name)===gkey(n))):[];
+  const chip=(n,c)=>`<button class="gchip n" data-gadd="${esc(n)}" data-gcat="${esc(c||cat||'')}">${esc(n)}</button>`;
+  $('#gPick').innerHTML=`<label>Category</label><div class="gcats">${GCATS.map(c=>`<button class="gcat n ${cat===c?'on':''}" data-gc="${c}"><span>${GICON[c]}</span>${c}</button>`).join('')}</div>
+   ${again.length?`<label>Buy again</label><div class="gchips">${again.map(a=>chip(a.name,a.cat)).join('')}</div>`:''}
+   ${cat?`<label>Common ${esc(cat.toLowerCase())}</label><div class="gchips">${common.map(n=>chip(n,cat)).join('')||'<span class="sub">All on your list already 👍</span>'}</div>`:'<p class="sub">Pick a category to see common items.</p>'}`;
+  $('#gPick').querySelectorAll('[data-gc]').forEach(b=>b.onclick=()=>{cat=cat===b.dataset.gc?'':b.dataset.gc;draw()});
+  $('#gPick').querySelectorAll('[data-gadd]').forEach(b=>b.onclick=async()=>{b.disabled=true;await addGroc(b.dataset.gadd,b.dataset.gcat,store||'',1);draw()})};
+ sheet(`<h2>Add groceries</h2><p class="sub" style="margin-top:-4px">Tap items to add them. Your usual store is remembered.</p>
+  <label>Store for new items</label><div class="seg" id="gSt">${['','Aldi','Walmart','Either'].map(k=>`<button data-gs="${k}" class="${k===store?'on':''}">${k||'Usual'}</button>`).join('')}</div>
+  <label>Type your own</label><div class="row"><input id="sn" value="${esc(name)}" placeholder="e.g. Taco seasoning" autocomplete="off" enterkeyhint="done"><button class="n" id="gTyped" style="flex:0 0 auto;padding:0 18px">Add</button></div>
+  <div id="gPick"></div>`);
+ $('#shX').textContent='Done';
+ $('#gSt').querySelectorAll('button').forEach(b=>b.onclick=()=>{store=b.dataset.gs;$('#gSt').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b))});
+ const typed=async()=>{const v=val('sn');if(!v)return;await addGroc(v,gguess(v)||cat,store,1,note);$('#sn').value='';note='';draw()};
+ $('#gTyped').onclick=typed;$('#sn').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();typed()}};draw()}
 function shopBought(name,done){const it=S.items.find(i=>i.name.toLowerCase()===name.toLowerCase());
  sheet(`<h2>Got it: ${esc(name)}</h2><p class="sub">Add to stock?</p><div class="row"><div><label>Amount</label><input id="lq" type="number" inputmode="decimal" value="1"></div><div><label>Price $ (optional)</label><input id="lp" type="number" inputmode="decimal"></div></div>`,
  async()=>{let i=it;if(!i){i={id:uid(),name,qty:0,unit:'ea',min:1,exp:'',cat:guessCat(name)};await save('items',i)}const p=await logQty(i,'bought',+val('lq')||1,+val('lp')||0);done&&await done();celebrate(p)})}
@@ -459,6 +518,11 @@ function bindExtra(on){
  on('[data-lowbuy]',e=>{const i=S.items.find(x=>x.id===e.dataset.lowbuy);shopBought(i.name)});
  on('[data-shopdone]',e=>{const x=S.shop.find(y=>y.id===e.dataset.shopdone);shopBought(x.name,()=>del('shop',x.id))});
  on('[data-shopdel]',e=>del('shop',e.dataset.shopdel));
+ on('[data-gfilter]',e=>{S.gstore=e.dataset.gfilter;localStorage.gstore=S.gstore;R()});on('#gAddBig',()=>addShop());
+ on('[data-qty]',async e=>{const x=S.shop.find(y=>y.id===e.dataset.qty);const q=Math.max(0,(x.qty||1)+ +e.dataset.d);if(q===0){if(confirm('Remove '+x.name+'?'))await del('shop',x.id)}else await save('shop',{...x,qty:q})});
+ on('[data-gstore]',async e=>{const id=e.dataset.gstore,n=e.dataset.name,cur=e.textContent.trim(),nx=GSTORES[(GSTORES.indexOf(cur)+1)%3];
+  if(id[0]==='L'&&!S.shop.find(y=>y.id===id)){S.grocmem={...(S.grocmem||{}),[gkey(n).replace(/[.\/~*\[\]]/g,'_')]:{...gmem(n),name:n,store:nx}};R()}else{const x=S.shop.find(y=>y.id===id);if(x)await save('shop',{...x,store:nx})}
+  remember(n,{store:nx,cat:gguess(n)})});
  on('#setB',()=>sheet(`<h2>Monthly grocery budget</h2><input id="bb" type="number" inputmode="decimal" value="${S.meta.budget||''}" placeholder="800">`,()=>F.setDoc(dref('meta','settings'),{budget:+val('bb')||0},{merge:true})));
  m_on();function m_on(){$('#main').querySelectorAll('[data-plan]').forEach(s=>s.onchange=()=>F.setDoc(dref('meta','settings'),{plan:{[s.dataset.plan]:s.value}},{merge:true}))}
  on('[data-cook]',async e=>{const m=S.meals.find(x=>x.id===e.dataset.cook);for(const g of m.ings||[]){const i=has(g);if(i)await logQty(i,'used',1)}await plog('cook',P.cook,{name:m.name});celebrate(P.cook)});
