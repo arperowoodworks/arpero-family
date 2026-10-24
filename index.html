@@ -5,40 +5,57 @@
 <link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" href="favicon-32.png">
 <title>Arpero Family</title>
 <style>
-:root{--g:#0f2d52;--bg:#f5f7fa;--teal:#1f6fa8;--gold:#f7a325;--c:#fff;--t:#1f2421;--m:#6b7069;--r:#b8321f;--o:#f26a1b}
+:root{--g:#0f2d52;--o:#f26a1b;--bg:#f2f2f7;--c:#fff;--t:#111827;--m:#8a8f98;--line:#e5e5ea;--r:#d1402b;--teal:#0f2d52;--gold:#f7a325}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--t);font:16px -apple-system,system-ui,sans-serif;touch-action:manipulation}
+html,body{margin:0;background:var(--bg);color:var(--t);font:17px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;touch-action:manipulation;-webkit-font-smoothing:antialiased}
 input,select,textarea,button{font-size:16px;font-family:inherit}
-input,select,textarea{width:100%;padding:10px;border:1px solid #d6d3cb;border-radius:10px;background:#fff}
-button{border:0;border-radius:10px;padding:10px 14px;background:var(--g);color:#fff;font-weight:600}
-button.s{background:#e7e4dc;color:var(--t)}button.d{background:none;color:var(--r);padding:6px}
-header{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env(safe-area-inset-top) + 8px) 16px 8px;display:flex;justify-content:space-between;align-items:center}
-h1{font-size:20px;margin:0}h2{font-size:17px;margin:16px 0 8px}
-.sub{color:var(--m);font-size:13px}
-main{padding:0 14px calc(90px + env(safe-area-inset-bottom))}
-.card{background:var(--c);border-radius:14px;padding:12px;margin:8px 0;box-shadow:0 1px 3px #0001}
-.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}.row>.n{flex:0 0 auto}
-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;border-top:1px solid #e5e2da;padding-bottom:env(safe-area-inset-bottom);z-index:6}
-nav button{flex:1;background:none;color:var(--m);padding:8px 0 6px;font-size:12px;font-weight:500;position:relative}
-nav button b{display:block;font-size:22px}nav button.on{color:var(--teal)}
-.badge{position:absolute;top:2px;right:22%;background:var(--r);color:#fff;border-radius:9px;font-size:11px;padding:1px 6px}
-.chk{width:28px;height:28px;border-radius:50%;border:2px solid var(--g);background:#fff;flex:0 0 28px;padding:0}
-.chk.on{background:var(--g)}.done .tt{text-decoration:line-through;color:var(--m)}
-.pill{display:inline-block;padding:2px 8px;border-radius:9px;font-size:12px;background:#eee;margin-right:4px}
-.hi{background:#fde2e0;color:var(--r)}.md{background:#fdf0d9;color:var(--o)}.lo{background:#e1eef8;color:var(--teal)}
-.seg{display:flex;background:#e7e4dc;border-radius:10px;padding:3px;margin:8px 0}.seg button{flex:1;background:none;color:var(--t);padding:7px}.seg button.on{background:#fff}
-.bar{height:10px;border-radius:5px;background:#eee;overflow:hidden;display:flex}.bar i{display:block;height:100%}
-table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px 4px;text-align:left;border-bottom:1px solid #eee}
-img.ph{width:100%;max-height:260px;object-fit:cover;border-radius:10px;margin-top:8px}
-.sheet{position:fixed;inset:0;background:#0006;z-index:20;display:flex;align-items:flex-end}
-.sheet>div{background:var(--bg);width:100%;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
-.sheet label{display:block;margin:10px 0 4px;font-size:14px;color:var(--m)}
+input,select,textarea{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--t);-webkit-appearance:none;appearance:none}
+select{background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a8f98' stroke-width='2' fill='none'/%3E%3C/svg%3E") no-repeat right 14px center}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g)}
+button{border:0;border-radius:12px;padding:12px 16px;background:var(--g);color:#fff;font-weight:600;cursor:pointer}
+button.s{background:#fff;color:var(--g);border:1px solid var(--line)}button.d{background:none;color:var(--r);padding:6px 8px;font-weight:500}
+button:active{opacity:.7}
+header{position:sticky;top:0;z-index:5;background:rgba(242,242,247,.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);padding:calc(env(safe-area-inset-top) + 14px) 20px 10px;display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+h1{font:700 30px/1.1 ui-serif,"New York",Georgia,serif;color:var(--g);margin:0;letter-spacing:-.3px}
+h2{font-size:20px;font-weight:700;color:var(--g);margin:24px 4px 10px}
+.sub{color:var(--m);font-size:14px}
+main{padding:4px 16px calc(100px + env(safe-area-inset-bottom))}
+.card{background:var(--c);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.row{display:flex;gap:12px;align-items:center}.row>*{flex:1;min-width:0}.row>.n{flex:0 0 auto}
+.list{background:#fff;border-radius:18px;margin:12px 0;overflow:hidden}.list>.card{margin:0;border-radius:0;box-shadow:none;border-bottom:1px solid var(--line)}.list>.card:last-child{border-bottom:0}
+nav{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);display:flex;border-top:1px solid var(--line);padding:6px 0 calc(4px + env(safe-area-inset-bottom));z-index:6}
+nav button{flex:1;background:none;color:var(--m);padding:4px 0;font-size:11px;font-weight:500;position:relative;border-radius:0}
+nav button svg{display:block;margin:0 auto 2px;width:26px;height:26px}nav button.on{color:var(--g);font-weight:600}
+.ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.badge{position:absolute;top:0;left:55%;background:var(--o);color:#fff;border-radius:9px;font-size:11px;padding:1px 6px}
+.chk{width:28px;height:28px;border-radius:50%;border:1.5px solid #b8bcc4;background:#fff;flex:0 0 28px;padding:0;display:flex;align-items:center;justify-content:center}
+.chk.on{background:var(--g);border-color:var(--g)}.chk.on:after{content:'';width:10px;height:6px;border:2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.done .tt{text-decoration:line-through;color:var(--m)}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:13px;border:1px solid var(--line);color:var(--m);background:#fff;margin-right:4px}
+.pill:before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;display:none}
+.hi,.md{color:var(--o);border-color:#fbd5bf}.hi:before,.md:before{display:inline-block}.hi{color:var(--r);border-color:#f3c2ba}.lo{color:var(--g);border-color:#cfd8e3}
+.seg{display:flex;background:#e3e3e8;border-radius:10px;padding:2px;margin:10px 0}.seg button{flex:1;background:none;color:var(--t);padding:7px;font-weight:500;border-radius:8px;font-size:14px}.seg button.on{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
+.bar{height:8px;border-radius:4px;background:#e8e8ed;overflow:hidden;display:flex}.bar i{display:block;height:100%;border-radius:4px}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px 4px;text-align:left;border-bottom:1px solid var(--line)}
+img.ph{width:100%;max-height:260px;object-fit:cover;border-radius:14px;margin-top:10px}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:20;display:flex;align-items:flex-end}
+.sheet>div{background:var(--bg);width:100%;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom))}
+.sheet h2{margin-top:0}.sheet label{display:block;margin:14px 0 6px;font-size:14px;color:var(--m)}
 .pop{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font-size:28px;font-weight:800;color:var(--g);z-index:30;pointer-events:none;animation:pop 1.1s ease-out forwards}
-@keyframes pop{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}25%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-140%) scale(1)}}
-.conf{position:fixed;top:-10px;width:8px;height:12px;z-index:29;animation:fall 1.6s linear forwards}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}25%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-140%) scale(1)}}
+.conf{position:fixed;top:-10px;width:7px;height:11px;border-radius:2px;z-index:29;animation:fall 1.6s linear forwards}
 @keyframes fall{to{transform:translateY(105vh) rotate(720deg)}}
-.big{font-size:30px;font-weight:800}.center{text-align:center}
-#login{padding:14vh 24px;text-align:center}
+.big{font-size:28px;font-weight:700;color:var(--g)}.center{text-align:center}
+.qa{display:grid;grid-template-columns:1fr 1fr;background:#fff;border-radius:18px;margin:12px 0;overflow:hidden}
+.qa button{background:#fff;color:var(--g);border-radius:0;padding:20px 8px 18px;font-size:16px;font-weight:600}
+.qa button:nth-child(odd){border-right:1px solid var(--line)}.qa button:nth-child(-n+2){border-bottom:1px solid var(--line)}
+.qa svg{width:40px;height:40px;display:block;margin:0 auto 8px;stroke-width:1.4}
+.goal .star{width:52px;height:52px;border-radius:50%;background:var(--g);color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 52px}
+.nudge{background:#fff;border-left:4px solid var(--o);border-radius:14px;padding:12px 14px;margin:8px 0 4px;display:flex;gap:10px;align-items:center}
+.addrow{color:var(--g);padding:14px 16px;display:flex;gap:10px;align-items:center;font-weight:500}
+.sec{display:flex;justify-content:space-between;align-items:baseline}.sec a{color:var(--m);font-size:15px;text-decoration:none}
+a{color:var(--g)}
+#login{padding:12vh 24px;text-align:center}
 </style></head><body>
 <div id="login" hidden><img src="logo.png" alt="Arpero Family" style="width:220px"><p class="sub">Est. 2023 · Our home, our team</p>
 <div id="lmain"><button id="gbtn" style="width:100%;max-width:320px">Sign in with Google</button><br><br><button id="ebtn" class="s" style="width:100%;max-width:320px">Sign in with email</button></div>
@@ -51,7 +68,7 @@ img.ph{width:100%;max-height:260px;object-fit:cover;border-radius:10px;margin-to
  <p class="center sub"><a href="#" id="lback">← Back</a></p></div>
 <p id="lmsg" class="sub"></p></div>
 <div id="app" hidden>
-<header><img src="icon-180.png" alt="" style="width:40px;height:40px;border-radius:10px;margin-right:10px"><div style="flex:1"><h1 id="ttl">To-dos</h1><div class="sub" id="who"></div></div><button class="s n" id="addBtn">＋ Add</button></header>
+<header><div style="flex:1"><h1 id="ttl">Arpero Family</h1><div class="sub" id="who" style="margin-top:4px;font-size:16px"></div></div><button class="s n" id="addBtn" style="border-radius:20px;padding:8px 14px">＋ Add</button></header>
 <main id="main"></main>
 <nav id="nav"></nav></div>
 <div id="sheet"></div>
@@ -66,7 +83,7 @@ const OSCAR='oskararpero@gmail.com';
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 const today=()=>new Date().toLocaleDateString('en-CA'),uid=()=>Math.random().toString(36).slice(2,10);
 const col=n=>F.collection(db,'families','arpero',n),dref=(n,id)=>F.doc(db,'families','arpero',n,id);
-const S={todos:[],items:[],logs:[],fixes:[],meta:{names:{oscar:'Oscar',wife:'Kerissa'}},tab:'home',sub:null,pantrySeg:'stock',meals:[],chores:[],rewards:[],maint:[],ideas:[],dates:[],shop:[],me:null,cmp:'week',seenFix:+localStorage.seenFix||0};
+const S={todos:[],items:[],logs:[],fixes:[],meta:{names:{oscar:'Oscar',wife:'Kerissa'}},tab:'home',sub:null,pantrySeg:'stock',meals:[],chores:[],rewards:[],maint:[],ideas:[],dates:[],shop:[],shouts:[],me:null,cmp:'week',seenFix:+localStorage.seenFix||0};
 const who=e=>(e||'').toLowerCase()===OSCAR?'oscar':'wife',nm=k=>{const v=S.meta.names?.[k];return (v&&v!=='Wife'?v:0)||({oscar:'Oscar',wife:'Kerissa'})[k]||k};
 const save=(n,o)=>F.setDoc(dref(n,o.id),o,{merge:true}),del=(n,id)=>F.deleteDoc(dref(n,id));
 const prov=()=>{const p=new A.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});return p};
@@ -97,7 +114,7 @@ A.onAuthStateChanged(auth,u=>{unsubs.forEach(f=>f());unsubs=[];
  if(!u){$('#login').hidden=false;$('#app').hidden=true;return}
  retried=0;S.me=who(u.email);$('#login').hidden=true;$('#app').hidden=false;setTimeout(afterLinkSheet,300);startListeners(u)});
 function startListeners(u){unsubs.forEach(f=>f());unsubs=[];if(!u)return;
- for(const n of ['todos','items','logs','fixes','meals','chores','rewards','maint','ideas','dates','shop'])unsubs.push(F.onSnapshot(col(n),s=>{S[n]=s.docs.map(d=>d.data());if(n==='fixes')notifyFix();R()},err=>denied(err)));
+ for(const n of ['todos','items','logs','fixes','meals','chores','rewards','maint','ideas','dates','shop','shouts'])unsubs.push(F.onSnapshot(col(n),s=>{S[n]=s.docs.map(d=>d.data());if(n==='fixes')notifyFix();R()},err=>denied(err)));
  unsubs.push(F.onSnapshot(dref('meta','settings'),s=>{if(s.exists())S.meta=s.data();R()},()=>{}));
 }
 let retried=0;function denied(e){console.error('Firestore listener error',e);const c=e&&e.code||'';
@@ -134,15 +151,15 @@ function notifyFix(){const open=S.fixes.filter(f=>f.status!=='fixed');
  if(!firstFix&&S.me==='oscar'){const nw=S.fixes.filter(f=>f.at>S.seenFix&&f.by!=='oscar');if(nw.length&&'Notification'in window&&Notification.permission==='granted')new Notification('New Fix It request',{body:nw[0].note||'Something needs fixing',icon:'icon-180.png'})}
  firstFix=false}
 // ---------- render ----------
-const TABS=[['home','🏠','Home'],['todos','☑️','To-dos'],['pantry','🥫','Groceries'],['fix','🔧','Fix It'],['more','☰','More']];
+const TABS=[['home','home','Today'],['todos','todos','To-dos'],['pantry','pantry','Groceries'],['fix','fix','Fix It'],['more','more','More']];
 function R(){
  const openFix=S.fixes.filter(f=>f.status!=='fixed'&&(S.me!=='oscar'||f.at>S.seenFix||f.status==='open')).length;
- $('#nav').innerHTML=TABS.map(([k,i,l])=>`<button class="${S.tab===k?'on':''}" data-t="${k}"><b>${i}</b>${l}${k==='fix'&&openFix?`<span class="badge">${openFix}</span>`:''}</button>`).join('');
+ $('#nav').innerHTML=TABS.map(([k,i,l])=>`<button class="${S.tab===k?'on':''}" data-t="${k}">${icon(i)}${l}${k==='fix'&&openFix?`<span class="badge">${openFix}</span>`:''}</button>`).join('');
  $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.t;S.sub=null;if(S.tab==='fix'){S.seenFix=Date.now();localStorage.seenFix=S.seenFix}R();scrollTo(0,0)});
- $('#ttl').textContent=S.sub?SUBS.find(x=>x[0]===S.sub)[2]:TABS.find(t=>t[0]===S.tab)[2];
- const st=stats();$('#who').textContent=`Hi ${nm(S.me)} · Team Lv ${st.lvl} · 🔥${st.st}`;
+ checkCh();$('#ttl').textContent=S.tab==='home'?'Arpero Family':S.sub?SUBS.find(x=>x[0]===S.sub)[2]:TABS.find(t=>t[0]===S.tab)[2];
+ const st=stats(),h=new Date().getHours();$('#who').textContent=S.tab==='home'?`Good ${h<12?'morning':h<17?'afternoon':'evening'}, ${nm(S.me)} 🧡`:`Team level ${st.lvl} · 🔥 ${st.st}-day streak`;$('#who').style.display=S.tab==='home'||!S.sub?'':'none';
  $('#addBtn').hidden=!['todos','pantry','fix'].includes(S.tab);
- $('#main').innerHTML=S.sub?(S.sub!=='more'?'<button class="s" data-sub="" style="margin:4px 0">‹ More</button>':'')+VIEWS[S.sub]():({home:vHome,todos:vTodos,pantry:vPantry,fix:vFix,more:vMore})[S.tab]();
+ $('#main').innerHTML=S.sub?(S.sub!=='more'?'<a href="#" data-sub="" style="display:inline-block;margin:2px 4px 6px;font-size:17px;text-decoration:none">‹ More</a>':'')+VIEWS[S.sub]():({home:vHome,todos:vTodos,pantry:vPantry,fix:vFix,more:vMore})[S.tab]();
  bind()}
 const dueTxt=d=>{if(!d)return'';const t=today();return d<t?`<span class="pill hi">Overdue ${d.slice(5)}</span>`:d===t?'<span class="pill md">Today</span>':`<span class="pill">${d.slice(5)}</span>`};
 let todoFilter='all';
@@ -178,7 +195,7 @@ function goalCard(){const t=stats(),g=goal(),p=Math.min(100,t.wk/g*100);
  return `<div class="card" data-go="score"><div class="row"><b>Team goal: ${g} pts this week</b><span class="n sub">${t.wk>=g?'🎉 Done!':''}</span></div>
  <div class="bar" style="height:14px;margin:8px 0"><i style="width:${p}%;background:linear-gradient(90deg,var(--teal),var(--o))"></i></div>
  <div class="sub">${t.wk} pts so far${t.wk<g?` · ${g-t.wk} to go together`:' · nice work, team!'}</div></div>`}
-function recap(){const ws=+weekStart(Date.now()),ev=events().filter(e=>e.at>=ws),c=k=>ev.filter(e=>e.k===k).length;
+function recap(ws=+weekStart(Date.now()),we=Infinity,title='This week we…',extra=''){const ev=events().filter(e=>e.at>=ws&&e.at<we),c=k=>ev.filter(e=>e.k===k).length;
  const now=new Date(),ms=+new Date(now.getFullYear(),now.getMonth(),1),b=+S.meta.budget||0;
  const spent=S.logs.filter(l=>l.type==='bought'&&l.at>=ms).reduce((a,l)=>a+(+l.price||0),0);
  const L=[[c('todo'),'to-dos done','✅'],[c('fix'),'things fixed','🔧'],[c('saved')+c('used'),'foods used up','🥕'],[c('chore'),'chores done','🧹'],[c('cook'),'home-cooked dinners','🍽️'],[c('maint'),'home care tasks','🛠️']].filter(x=>x[0]);
@@ -187,16 +204,16 @@ function recap(){const ws=+weekStart(Date.now()),ev=events().filter(e=>e.at>=ws)
   const items=S.logs.filter(l=>l.type==='bought'&&l.by===k&&l.at>=ws).length;if(items)bits.push(`added ${items} item${items>1?'s':''}`);
   if(n('chore'))bits.push(`did ${n('chore')} chore${n('chore')>1?'s':''}`);if(n('cook'))bits.push(`cooked dinner`);if(n('fixreq'))bits.push(`spotted ${n('fixreq')} fix${n('fixreq')>1?'es':''}`);
   return bits.length?`💛 Thanks ${esc(nm(k))}: ${bits.join(', ')}`:''}).filter(Boolean);
- return `<div class="card"><b>This week we…</b>${L.length?L.map(x=>`<div style="margin-top:6px">${x[2]} ${x[0]} ${x[0]===1?x[1].replace(/^(\S+?)s\b/,'$1').replace('dinners','dinner').replace('tasks','task').replace('foods','food'):x[1]}</div>`).join(''):'<div class="sub" style="margin-top:6px">Just getting started. Every little thing counts!</div>'}
+ return `<div class="card"><b>${title}</b>${L.length?L.map(x=>`<div style="margin-top:6px">${x[2]} ${x[0]} ${x[0]===1?x[1].replace(/^(\S+?)s\b/,'$1').replace('dinners','dinner').replace('tasks','task').replace('foods','food'):x[1]}</div>`).join(''):'<div class="sub" style="margin-top:6px">Just getting started. Every little thing counts!</div>'}
  ${b?`<div style="margin-top:6px">💵 ${spent<=b?`$${(b-spent).toFixed(0)} under budget this month`:`$${(spent-b).toFixed(0)} over budget this month`}</div>`:''}
- ${thanks.length?`<div class="sub" style="margin-top:10px">${thanks.join('<br>')}</div>`:''}</div>`}
+ ${thanks.length?`<div class="sub" style="margin-top:10px">${thanks.join('<br>')}</div>`:''}${extra}</div>`}
 function vGame(){const t=stats();
  return goalCard()+`<div class="card"><div class="row center"><div><div class="big">${t.tot}</div><div class="sub">team points</div></div><div><div class="big">Lv ${t.lvl}</div><div class="sub">team level</div></div><div><div class="big">🔥${t.st}</div><div class="sub">day streak</div></div></div>
  <div class="bar" style="margin-top:8px"><i style="width:${Math.min(100,t.tot/t.next*100)}%;background:var(--o)"></i></div><div class="sub">${t.next-t.tot} pts to team level ${t.lvl+1}</div></div>`+recap()+
  `<h2>Team badges</h2><div class="card">${t.B.map(([i,l,on])=>`<span class="pill" style="opacity:${on?1:.3};margin:3px 2px">${i} ${l}</span>`).join(' ')}</div>
  <div class="card sub">Everything you both do adds to one team total: to-do ${P.todo} · fix ${P.fix} · spotting a fix ${P.fixReq} · using food ${P.used} (+${P.beforeExp} before it expires) · purchase ${P.bought} · receipt scan ${P.scan} · chores & home care too. Spend team points together in the Rewards shop.</div>
  <div class="card"><label class="sub">Weekly team goal (points)</label><div class="row"><input id="tg" type="number" inputmode="numeric" value="${goal()}"><button class="n" id="saveG">Save</button></div>
- <label class="sub" style="margin-top:10px;display:block">Names</label><div class="row"><input id="n1" value="${esc(nm('oscar'))}"><input id="n2" value="${esc(nm('wife'))}"><button class="n" id="saveN">Save</button></div>
+ <label class="sub" style="margin-top:14px;display:block">Daily nudge (one a day, shown when you open the app)</label><div class="row"><select id="nOn"><option value="1" ${(S.meta.nudge?.[S.me]?.on)!==false?'selected':''}>On</option><option value="0" ${(S.meta.nudge?.[S.me]?.on)===false?'selected':''}>Off</option></select><input id="nT" type="time" value="${S.meta.nudge?.[S.me]?.time||'08:00'}"><button class="n" id="saveNudge">Save</button></div><label class="sub" style="margin-top:14px;display:block">Names</label><div class="row"><input id="n1" value="${esc(nm('oscar'))}"><input id="n2" value="${esc(nm('wife'))}"><button class="n" id="saveN">Save</button></div>
  <p class="sub">Signed in as ${esc(auth.currentUser?.email)} · <a href="#" id="so2">Sign out</a></p></div>`}
 // ---------- sheets ----------
 function sheet(html,onSave){$('#sheet').innerHTML=`<div class="sheet"><div>${html}<div class="row" style="margin-top:14px"><button class="s" id="shX">Cancel</button>${onSave?'<button id="shOk">Save</button>':''}</div></div></div>`;
@@ -287,23 +304,82 @@ function quickUse(){if(!S.items.length){alert('Your pantry is empty. Scan a rece
  async()=>{const i=S.items.find(x=>x.id===$('#qi').value),q=+val('qq');if(!i||!q)return false;const p=await logQty(i,$('#qt').value,q);if(p)celebrate(p)})}
 function maintDue(){return S.maint.map(m=>({...m,due:m.last?addDays(m.last,m.every):today()})).sort((a,b)=>a.due>b.due?1:-1)}
 function nextDates(){return S.dates.map(d=>{let n=d.date;if(d.yearly&&n){const t=today(),y=+t.slice(0,4);n=y+n.slice(4);if(n<t)n=(y+1)+n.slice(4)}return{...d,next:n,days:n?daysTo(n):null,yrs:d.yearly&&d.date?(+String(n).slice(0,4))-(+d.date.slice(0,4)):0}}).filter(d=>d.next).sort((a,b)=>a.days-b.days)}
-function vHome(){const t=today();
- const dueT=S.todos.filter(x=>!x.done&&x.due&&x.due<=t&&(x.who===S.me||x.who==='both')).length,fx=S.fixes.filter(f=>f.status!=='fixed').length,sh=lowItems().length+S.shop.filter(x=>!x.done).length;
- const md=maintDue().filter(m=>m.due<=addDays(t,7)),ch=S.chores.filter(c=>c.next<=t),nd=nextDates()[0],dinner=(S.meta.plan||{})[t],dm=dinner&&S.meals.find(m=>m.id===dinner);
- const big=(a,i,l)=>`<button data-q="${a}" style="padding:18px 8px;font-size:17px;border-radius:16px"><div style="font-size:30px">${i}</div>${l}</button>`;
- const line=(i,txt,go)=>`<div class="card row" data-go="${go}"><span class="n" style="font-size:22px">${i}</span><div>${txt}</div><span class="n sub">›</span></div>`;
- return (localStorage.hintDone?'':`<div class="card" style="background:#fff7ec"><b>Welcome to Arpero Family 👋</b><div class="sub" style="margin:6px 0">Use the big buttons for the everyday stuff. Everything syncs between both phones. Everything you both do adds to one team score: to-dos, fixes, chores, and using food before it goes bad. Budget, meals, chores, rewards, home care and date night are under More.</div><button class="s" id="hintX">Got it</button></div>`)+
- `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0">${big('scan','🧾','Scan receipt')}${big('fix','📸','Fix It photo')}${big('todo','✅','Add to-do')}${big('use','🥄','Log used')}</div>
- ${goalCard()}`+
- (dueT?line('☑️',`<b>${dueT}</b> to-do${dueT>1?'s':''} due for you`,'t:todos'):'')+
- (fx?line('🔧',`<b>${fx}</b> open Fix It request${fx>1?'s':''}`,'t:fix'):'')+
- (ch.length?line('🧹',`Chore: <b>${esc(ch[0].name)}</b> (${esc(nm(ch[0].turn))})${ch.length>1?` + ${ch.length-1} more`:''}`,'chores'):'')+
- (md.length?line('🛠️',`Home care: <b>${esc(md[0].name)}</b>${md.length>1?` + ${md.length-1} more`:''}`,'maint'):'')+
- (sh?line('🛒',`<b>${sh}</b> on the shopping list`,'t:shop'):'')+
- line('🍽️',dm?`Tonight: <b>${esc(dm.name)}</b>`:'No dinner planned tonight','meals')+
- (nd?line('📅',`<b>${esc(nd.name)}</b> ${nd.days===0?'is today! 🎉':'in '+nd.days+' day'+(nd.days>1?'s':'')}`,'dates'):'')}
-const SUBS=[['budget','💵','Budget & waste'],['compare','📊','Bought vs used'],['meals','🍽️','Meal planner'],['chores','🧹','Chores'],['rewards','🎁','Rewards shop'],['maint','🛠️','Home care'],['dates','💑','Date night & dates'],['score','🏡','Team & settings']];
-function vMore(){return SUBS.map(([k,i,l])=>`<div class="card row" data-sub="${k}"><span class="n" style="font-size:24px">${i}</span><b>${l}</b><span class="n sub">›</span></div>`).join('')}
+// ===== icons =====
+const IC={home:'<path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/>',todos:'<rect x="4" y="4" width="16" height="16" rx="4"/><path d="m8.5 12 2.5 2.5 4.5-5"/>',pantry:'<path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6.2"/><circle cx="10" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/>',
+fix:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',more:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
+cal:'<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+scan:'<path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21z"/><path d="M9 8h6M9 11h6M9 15h1M11 15h1M13 15h2"/>',add:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',used:'<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1M9 9h6M9 12h4"/><path d="M14 18c0-3 2-5 5-5 0 3-2 5-5 5z"/>',
+star:'<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/>',bell:'<path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>'};
+const icon=(k,c='ic')=>`<svg class="${c}" viewBox="0 0 24 24">${IC[k]}</svg>`;
+// ===== nudges & shout-outs =====
+const partner=()=>S.me==='oscar'?'wife':'oscar';
+function shoutable(){const p=partner(),since=Date.now()-3*864e5,done=new Set(S.shouts.map(x=>x.ref)),L=[];
+ S.todos.forEach(t=>t.done&&t.doneBy===p&&t.doneAt>since&&L.push({ref:'t'+t.id,text:`${t.fixId?'fixed':'finished'} “${t.title}”`,at:t.doneAt}));
+ S.fixes.forEach(f=>f.status==='fixed'&&(f.fixedBy||'oscar')===p&&f.fixedAt>since&&!S.todos.some(t=>t.fixId===f.id&&t.done)&&L.push({ref:'f'+f.id,text:`fixed “${f.note}”`,at:f.fixedAt}));
+ S.logs.forEach(l=>(l.type==='chore'||l.type==='maint'||l.type==='cook')&&l.by===p&&l.at>since&&L.push({ref:'l'+l.id,text:`${l.type==='cook'?'cooked':'did'} ${l.name}`,at:l.at}));
+ return L.filter(x=>!done.has(x.ref)).sort((a,b)=>b.at-a.at).slice(0,3)}
+async function sendThanks(ref,text){await save('shouts',{id:uid(),ref,from:S.me,to:partner(),text,at:Date.now(),seen:false});await plog('thanks',2,{name:'Shout-out'});celebrate(2)}
+function nudgeText(){const n=S.meta.nudge?.[S.me]||{};if(n.on===false)return'';
+ const t=n.time||'08:00',nowT=new Date().toTimeString().slice(0,5);if(nowT<t)return'';
+ const sh=S.shouts.filter(x=>x.to===S.me&&!x.seen).sort((a,b)=>b.at-a.at)[0];if(sh){setTimeout(()=>save('shouts',{...sh,seen:true}),4000);return`💛 ${esc(nm(sh.from))} says thanks for ${esc(sh.text.replace(/^(finished|fixed|did|cooked) /,''))}!`}
+ if(S.me==='oscar'){const f=S.fixes.filter(f=>f.status!=='fixed'&&f.by!=='oscar').sort((a,b)=>b.at-a.at)[0];if(f&&f.at>Date.now()-2*864e5)return`🔧 ${esc(nm(f.by))} sent a Fix It: ${esc(f.note||'take a look')}`}
+ const tm=stats(),g=goal(),left=g-tm.wk;if(left>0&&new Date().getDay()>=4)return`⭐ ${left} pts to hit the team goal. ${S.chores.filter(c=>c.next<=today()).length?S.chores.filter(c=>c.next<=today()).length+' chore(s) would get you closer!':'You got this!'}`;
+ const low=lowItems()[0];if(low)return`🛒 ${esc(low.name)} is running low`;
+ const ch=S.chores.find(c=>c.next<=today()&&c.turn===S.me);if(ch)return`🧹 ${esc(ch.name)} is ready when you are`;return''}
+function nudgeBanner(){const d=today();if(localStorage.nudgeDay===d&&localStorage.nudgeShown!=='open')return'';const txt=nudgeText();if(!txt)return'';
+ if(localStorage.nudgeDay!==d){localStorage.nudgeDay=d;localStorage.nudgeShown='open'}
+ return `<div class="nudge"><div style="flex:1">${txt}</div><button class="d n" id="nudgeX" style="color:var(--m)">✕</button></div>`}
+function shoutCard(){const L=shoutable(),feed=S.shouts.slice().sort((a,b)=>b.at-a.at).slice(0,3);if(!L.length&&!feed.length)return'';
+ return `<h2>Shout-outs</h2><div class="list">${L.map(x=>`<div class="card row"><div>${esc(nm(partner()))} ${esc(x.text)}</div><button class="n" style="border-radius:20px;padding:8px 14px" data-thx="${x.ref}" data-txt="${esc(x.text)}">Thanks! 💛</button></div>`).join('')}
+ ${feed.map(x=>`<div class="card sub">💛 ${esc(nm(x.from))} thanked ${esc(nm(x.to))} for ${esc(x.text.replace(/^(finished|fixed|did|cooked) /,''))}</div>`).join('')}</div>`}
+// ===== monthly goal & challenges =====
+const ym=()=>today().slice(0,7);
+function monthPts(){const ms=+new Date(new Date().getFullYear(),new Date().getMonth(),1);return events().filter(e=>e.at>=ms).reduce((a,e)=>a+e.pts,0)}
+function monthCard(){const m=S.meta.month;if(!m||m.ym!==ym())return `<div class="card row" id="pickMonth"><div><b>Pick this month's team reward</b><div class="sub">Choose something to work toward together</div></div><span class="n sub">›</span></div>`;
+ const p=monthPts(),pc=Math.min(100,p/m.target*100);return `<div class="card" id="pickMonth"><div class="row"><div><b>${esc(m.name)}</b><div class="sub">Monthly team reward · ${p} / ${m.target} pts</div></div><span class="n" style="color:var(--o);font-weight:600">${pc>=100?'Unlocked! 🎉':Math.round(pc)+'%'}</span></div><div class="bar" style="margin-top:10px"><i style="width:${pc}%;background:var(--o)"></i></div></div>`}
+function pickMonth(){const m=S.meta.month?.ym===ym()?S.meta.month:{};sheet(`<h2>This month's team reward</h2><label>What are we working toward?</label><select id="mp"><option>Dinner out</option><option>Weekend trip</option><option>New board game</option><option>Spa day</option><option value="">Something else…</option></select><input id="mo" placeholder="Type your own" style="margin-top:8px" value="${esc(m.name||'')}"><label>Team points needed</label><input id="mt" type="number" inputmode="numeric" value="${m.target||1200}">`,
+ ()=>{const name=val('mo')||$('#mp').value;if(!name)return false;return F.setDoc(dref('meta','settings'),{month:{ym:ym(),name,target:+val('mt')||1200}},{merge:true})})}
+const SEASON={0:'New Year',1:'Winter',2:'Spring',3:'Spring',4:'Spring',5:'Summer',6:'Summer',7:'Summer',8:'Fall',9:'Fall',10:'Fall',11:'Holiday'};
+const CH=[{id:'nowaste',name:'No-waste week',icon:'🥕',days:7,desc:'Nothing thrown out for 7 days, and use up 5 items.',ok:(ev,l)=>!l.some(x=>x.type==='wasted')&&ev.filter(e=>e.k==='used'||e.k==='saved').length>=5},
+ {id:'clean',name:()=>SEASON[new Date().getMonth()]+' cleaning',icon:'🧽',days:14,desc:'Do 8 chores or home care tasks in 2 weeks.',ok:ev=>ev.filter(e=>e.k==='chore'||e.k==='maint').length>=8},
+ {id:'fixit',name:'Fix-it sprint',icon:'🔧',days:7,desc:'Fix 3 things around the house this week.',ok:ev=>ev.filter(e=>e.k==='fix').length>=3},
+ {id:'cook',name:'Home chef week',icon:'🍳',days:7,desc:'Cook 5 planned dinners at home.',ok:ev=>ev.filter(e=>e.k==='cook').length>=5},
+ {id:'thanks',name:'Gratitude week',icon:'💛',days:7,desc:'Send each other 6 shout-outs.',ok:ev=>ev.filter(e=>e.k==='thanks').length>=6}];
+const chName=c=>typeof c.name==='function'?c.name():c.name;
+function activeCh(){const a=S.meta.challenge;if(!a)return null;const c=CH.find(x=>x.id===a.id);if(!c)return null;const end=a.start+c.days*864e5;
+ const ev=events().filter(e=>e.at>=a.start&&e.at<end),l=S.logs.filter(x=>x.at>=a.start&&x.at<end);return{...c,a,end,won:c.ok(ev,l),over:Date.now()>end}}
+function checkCh(){const c=activeCh();if(!c)return;if(c.won&&!(S.meta.badges||[]).includes(c.id+':'+c.a.start)){F.setDoc(dref('meta','settings'),{badges:[...(S.meta.badges||[]),c.id+':'+c.a.start],challenge:null},{merge:true});celebrate('🏅 '+chName(c))}
+ else if(c.over&&!c.won)F.setDoc(dref('meta','settings'),{challenge:null},{merge:true})}
+function chCard(){const c=activeCh();if(!c)return'';const d=Math.max(0,Math.ceil((c.end-Date.now())/864e5));return `<div class="card row" data-go="challenges"><span class="n" style="font-size:28px">${c.icon}</span><div><b>${esc(chName(c))}</b><div class="sub">${esc(c.desc)} · ${d} day${d!==1?'s':''} left</div></div></div>`}
+function vChallenges(){const c=activeCh(),won=(S.meta.badges||[]);
+ return (c?chCard()+'<button class="s" id="quitCh" style="width:100%">Stop this challenge</button>':'<p class="sub" style="margin:4px">Optional team quests. Pick one when you feel like it. Finish it to earn a badge.</p>'+`<div class="list">${CH.map(x=>`<div class="card row"><span class="n" style="font-size:26px">${x.icon}</span><div><b>${esc(chName(x))}</b><div class="sub">${esc(x.desc)}</div></div><button class="n s" data-chstart="${x.id}" style="border-radius:20px;padding:8px 14px">Start</button></div>`).join('')}</div>`)+
+ `<h2>Challenge badges</h2><div class="card">${won.length?won.map(w=>{const x=CH.find(y=>y.id===w.split(':')[0]);return x?`<span class="pill lo" style="margin:3px">${x.icon} ${esc(chName(x))} · ${new Date(+w.split(':')[1]).toLocaleDateString('en',{month:'short',year:'numeric'})}</span>`:''}).join(''):'<span class="sub">None yet. Your first one is waiting!</span>'}</div>`}
+// ===== Sunday recap =====
+function sundayCard(){const d=new Date().getDay();if(d>1||localStorage.recapSeen===String(+weekStart(Date.now())))return'';
+ const we=+weekStart(Date.now()),ws=we-7*864e5;const unlocked=S.logs.filter(l=>l.type==='redeem'&&l.at>=ws&&l.at<we).map(l=>l.name);
+ return recap(ws,we,'Last week we…',`<div style="margin-top:6px">🔥 ${stats().st}-day team streak</div>${unlocked.length?`<div style="margin-top:6px">🎁 Unlocked: ${unlocked.map(esc).join(', ')}</div>`:''}<button class="s" id="recapX" style="margin-top:12px;width:100%">Nice! 👍</button>`)}
+// ===== Today home =====
+function vHome(){const t=today(),tm=stats(),g=goal(),pc=Math.min(100,Math.round(tm.wk/g*100));
+ const todo=S.todos.filter(x=>!x.done&&(x.who===S.me||x.who==='both')&&(!x.due||x.due<=t)).sort((a,b)=>(a.due||'9')>(b.due||'9')?1:-1).slice(0,5);
+ const doneToday=S.todos.filter(x=>x.done&&x.doneAt&&new Date(x.doneAt).toLocaleDateString('en-CA')===t).slice(0,3);
+ const ch=S.chores.filter(c=>c.next<=t),md=maintDue().filter(m=>m.due<=t),fx=S.fixes.filter(f=>f.status!=='fixed').length,sh=lowItems().length+S.shop.filter(x=>!x.done).length;
+ const nd=nextDates()[0],dinner=(S.meta.plan||{})[t],dm=dinner&&S.meals.find(m=>m.id===dinner);
+ const pri=x=>x.due&&x.due<t?'<span class="pill hi">Overdue</span>':x.fixId?'<span class="pill md">Fix It</span>':'';
+ const line=(txt,go)=>`<div class="card row" data-go="${go}"><div>${txt}</div><span class="n sub">›</span></div>`;
+ const extras=[fx&&line(`🔧 ${fx} open Fix It`,'t:fix'),sh&&line(`🛒 ${sh} on the shopping list`,'t:shop'),md.length&&line(`🛠️ ${esc(md[0].name)}${md.length>1?` +${md.length-1}`:''}`,'maint'),dm&&line(`🍽️ Tonight: ${esc(dm.name)}`,'meals'),nd&&nd.days<=14&&line(`📅 ${esc(nd.name)} ${nd.days===0?'is today 🎉':'in '+nd.days+' days'}`,'dates')].filter(Boolean);
+ return nudgeBanner()+(localStorage.hintDone?'':`<div class="card"><b>Welcome 👋</b><div class="sub" style="margin:6px 0 10px">This is your Today screen. Tap a button to scan a receipt, report something broken, add a to-do or log food you used. Everything syncs between your phones and adds to one team score.</div><button class="s" id="hintX">Got it</button></div>`)+
+ `<div class="qa">${[['scan','scan','Scan Receipt'],['fix','fix','Fix It'],['todo','add','Add To-Do'],['use','used','Log Used']].map(([a,i,l])=>`<button data-q="${a}">${icon(i)}${l}</button>`).join('')}</div>
+ <div class="card goal row" data-go="score"><div class="star n">${icon('star')}</div><div><div><b>${tm.wk} / ${g}</b> <span class="sub">pts this week</span></div><div class="sub" style="margin:2px 0 8px">Team goal progress</div><div class="bar"><i style="width:${pc}%;background:var(--g)"></i></div></div><div class="n center" style="color:var(--o);font-weight:600"><div style="font-size:24px">🔥</div>${tm.st}d</div></div>`+
+ sundayCard()+chCard()+
+ `<div class="sec" style="margin:22px 4px 10px"><h2 style="margin:0">Today</h2><a href="#" data-go="t:todos">See all</a></div><div class="list">`+
+ todo.map(x=>`<div class="card row"><button class="chk n" data-done="${x.id}"></button><div data-edit="${x.id}"><div class="tt">${esc(x.title)}</div>${x.who==='both'?'<div class="sub">Both of us</div>':''}</div>${pri(x)?`<span class="n">${pri(x)}</span>`:''}</div>`).join('')+
+ ch.map(c=>`<div class="card row"><button class="chk n" data-chdone="${c.id}"></button><div><div>${esc(c.name)}</div><div class="sub">Chore · ${esc(nm(c.turn))}'s turn · ${c.pts} pts</div></div></div>`).join('')+
+ doneToday.map(x=>`<div class="card row done"><button class="chk on n" data-done="${x.id}"></button><div><div class="tt">${esc(x.title)}</div></div></div>`).join('')+
+ `<div class="addrow" data-q="todo">＋ Add new to-do</div></div>`+
+ (todo.length+ch.length?'':'<p class="sub center">All clear for today ✨</p>')+
+ shoutCard()+monthCard()+(extras.length?`<div class="list">${extras.join('')}</div>`:'')}
+const SUBS=[['budget','💵','Budget & waste'],['compare','📊','Bought vs used'],['meals','🍽️','Meal planner'],['chores','🧹','Chores'],['rewards','🎁','Rewards shop'],['maint','🛠️','Home care'],['dates','💑','Date night & dates'],['challenges','🏅','Challenges'],['score','🏡','Team & settings']];
+function vMore(){return '<div class="list">'+SUBS.map(([k,i,l])=>`<div class="card row" data-sub="${k}"><span class="n" style="font-size:24px">${i}</span><b>${l}</b><span class="n sub">›</span></div>`).join('')+'</div>'}
 function vBudget(){const now=new Date(),ms=+new Date(now.getFullYear(),now.getMonth(),1),b=+S.meta.budget||0;
  const L=S.logs.filter(l=>l.at>=ms&&l.item),cat={};let spent=0,waste=0;
  L.forEach(l=>{const i=S.items.find(x=>x.id===l.item);if(!i)return;const c=i.cat||guessCat(i.name);
@@ -343,7 +419,7 @@ function vDates(){const nd=nextDates(),ideas=S.ideas.filter(i=>!i.done);
  ${nd.map(d=>`<div class="card row" data-dt="${d.id}"><div><b>${esc(d.name)}</b><div class="sub">${new Date(d.next+'T12:00').toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'})}${d.yrs>0&&/anniv/i.test(d.name)?' · '+d.yrs+' years 💍':''}</div></div><div class="n center"><div class="big" style="font-size:24px">${d.days}</div><div class="sub">days</div></div></div>`).join('')}<button class="s" id="newDate" style="width:100%">＋ Add a date (birthday, bill, anniversary)</button>`}
 function editDate(d={}){sheet(`<h2>${d.id?'Edit':'New'} date</h2><label>Name</label><input id="dn" value="${esc(d.name)}" placeholder="Kerissa's birthday"><label>Date</label><input id="dd" type="date" value="${d.date||''}"><label>Repeats</label><select id="dy"><option value="1" ${d.yearly!==false?'selected':''}>Every year</option><option value="0" ${d.yearly===false?'selected':''}>One time</option></select>${d.id?'<button class="d" id="ddel">Delete</button>':''}`,
  ()=>{if(!val('dn')||!$('#dd').value)return false;save('dates',{id:d.id||uid(),name:val('dn'),date:$('#dd').value,yearly:$('#dy').value==='1'})});if(d.id)$('#ddel').onclick=()=>{del('dates',d.id);close()}}
-const VIEWS={budget:vBudget,compare:()=>vStats(),meals:vMeals,chores:vChores,rewards:vRewards,maint:vMaint,dates:vDates,score:()=>vGame()};
+const VIEWS={budget:vBudget,compare:()=>vStats(),meals:vMeals,chores:vChores,rewards:vRewards,maint:vMaint,dates:vDates,challenges:vChallenges,score:()=>vGame()};
 const plog=(type,pts,extra={})=>save('logs',{id:uid(),type,pts,by:S.me,at:Date.now(),...extra});
 function bindExtra(on){
  on('[data-sub]',e=>{S.tab='more';S.sub=e.dataset.sub||null;R();scrollTo(0,0)});
@@ -363,6 +439,9 @@ function bindExtra(on){
  on('[data-chdone]',async e=>{const c=S.chores.find(x=>x.id===e.dataset.chdone);await save('chores',{...c,next:addDays(today(),c.every),turn:c.turn==='oscar'?'wife':'oscar'});await plog('chore',c.pts,{name:c.name});celebrate(c.pts)});
  on('#newReward',()=>sheet(`<h2>New prize</h2><label>Prize</label><input id="rn" placeholder="Pick the movie"><label>Cost (points)</label><input id="rc" type="number" inputmode="numeric" value="100">`,()=>{if(!val('rn'))return false;save('rewards',{id:uid(),name:val('rn'),cost:+val('rc')||100})}));
  on('[data-redeem]',async e=>{const r=S.rewards.find(x=>x.id===e.dataset.redeem);if(stats().bal<r.cost||!confirm(`Unlock "${r.name}" for ${r.cost} team points?`))return;await plog('redeem',0,{name:r.name,cost:r.cost});celebrate('🎁')});
+ on('[data-thx]',e=>sendThanks(e.dataset.thx,e.dataset.txt));on('#nudgeX',()=>{localStorage.nudgeShown='closed';R()});on('#recapX',()=>{localStorage.recapSeen=String(+weekStart(Date.now()));R()});on('#pickMonth',pickMonth);
+ on('[data-chstart]',e=>F.setDoc(dref('meta','settings'),{challenge:{id:e.dataset.chstart,start:Date.now()}},{merge:true}));on('#quitCh',()=>confirm('Stop this challenge?')&&F.setDoc(dref('meta','settings'),{challenge:null},{merge:true}));
+ on('#saveNudge',()=>F.setDoc(dref('meta','settings'),{nudge:{[S.me]:{on:$('#nOn').value==='1',time:$('#nT').value||'08:00'}}},{merge:true}).then(()=>celebrate('Saved')));
  on('#seedR',async()=>{for(const [n,c] of [['🍿 Movie night',150],['🥡 Takeout night',300],['🍦 Ice cream run',100],['💑 Date night out',500],['😴 Sleep-in Saturday',250]])await save('rewards',{id:uid(),name:n,cost:c})});
  on('#saveG',()=>F.setDoc(dref('meta','settings'),{goal:+val('tg')||300},{merge:true}));
  on('[data-rdel]',e=>del('rewards',e.dataset.rdel));
