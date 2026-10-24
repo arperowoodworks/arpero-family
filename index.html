@@ -90,6 +90,8 @@ button{border-radius:8px!important;box-shadow:none!important}.card{box-shadow:no
 .bhead{display:flex;align-items:center;gap:12px;margin:6px 0}.stats4{display:grid;grid-template-columns:repeat(4,1fr);text-align:center;margin-bottom:10px}.stats4 b{display:block;font-size:20px;font-weight:500}
 .wk{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}.bar2{height:60px;background:#f0f0f3;border-radius:6px;display:flex;align-items:flex-end;overflow:hidden}.bar2 i{display:block;width:100%;background:var(--g);border-radius:6px}
 .chk{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:15px}.chk input{width:auto}
+.bigt .bt:nth-child(3){grid-column:1/-1;min-height:64px;background:#fff!important;color:var(--t)!important;border:1px solid var(--line)!important}
+.guide{padding:4px 16px!important}.guide details{border-bottom:1px solid var(--line)}.guide details:last-child{border-bottom:0}.guide summary{display:flex;align-items:center;gap:12px;padding:15px 0;font-size:16px;font-weight:500;color:var(--t);list-style:none;margin:0}.guide summary::-webkit-details-marker{display:none}.guide summary::after{content:'+';margin-left:auto;color:var(--m);font-weight:300;font-size:22px}.guide details[open] summary::after{content:'−'}.gi{font-size:20px;width:26px;text-align:center}.gb{padding:0 0 14px 38px;font-size:15px;line-height:1.55;font-weight:300}.gb p{margin:0 0 10px}.gb ul{margin:0 0 10px;padding-left:18px}.gb li{margin:5px 0}.gb b{font-weight:500}
 </style></head><body>
 <div id="login" hidden><img src="emblem.jpg" alt="" class="brand-emb"><div class="wm">Arpero Family</div><div class="wm-line"></div><div class="brand-est">Est. 2023 · Our home, our team</div><div class="brand-hi" id="lhi"></div>
 <div id="lmain"><button id="gbtn" style="width:100%;max-width:320px">Sign in with Google</button><div style="height:12px"></div><button id="ebtn" class="s" style="width:100%;max-width:320px">Sign in with email</button></div>
@@ -106,7 +108,7 @@ button{border-radius:8px!important;box-shadow:none!important}.card{box-shadow:no
 <main id="main"></main>
 <nav id="nav"></nav></div>
 <div id="sheet"></div>
-<script src="parse.js"></script><script src="food-data.js"></script>
+<script src="parse.js"></script><script src="food-data.js"></script><script src="guide.js"></script>
 <script type="module">
 const V='https://www.gstatic.com/firebasejs/11.10.0/';
 const chiHour=()=>+new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',hourCycle:'h23'}).format(new Date())%24;
@@ -250,7 +252,7 @@ function recap(ws=+weekStart(Date.now()),we=Infinity,title='This week we…',ext
  ${b?`<div style="margin-top:6px">💵 ${spent<=b?`$${(b-spent).toFixed(0)} under budget this month`:`$${(spent-b).toFixed(0)} over budget this month`}</div>`:''}
  ${thanks.length?`<div class="sub" style="margin-top:10px">${thanks.join('<br>')}</div>`:''}${extra}</div>`}
 function vGame(){const t=stats();
- return goalCard()+`<div class="card"><div class="row center"><div><div class="big">${t.tot}</div><div class="sub">team points</div></div><div><div class="big">Lv ${t.lvl}</div><div class="sub">team level</div></div><div><div class="big">🔥${t.st}</div><div class="sub">day streak</div></div></div>
+ return `<div class="card flat row" data-go="guide"><span class="n" style="font-size:22px">📖</span><div style="flex:1"><div class="ut">How to use Arpero Family</div><div class="sub">Setup, every feature, tips</div></div><span class="n sub">›</span></div>`+goalCard()+`<div class="card"><div class="row center"><div><div class="big">${t.tot}</div><div class="sub">team points</div></div><div><div class="big">Lv ${t.lvl}</div><div class="sub">team level</div></div><div><div class="big">🔥${t.st}</div><div class="sub">day streak</div></div></div>
  <div class="bar" style="margin-top:8px"><i style="width:${Math.min(100,t.tot/t.next*100)}%;background:var(--o)"></i></div><div class="sub">${t.next-t.tot} pts to team level ${t.lvl+1}</div></div>`+recap()+
  `<h2>Team badges</h2><div class="card">${t.B.map(([i,l,on])=>`<span class="pill" style="opacity:${on?1:.3};margin:3px 2px">${i} ${l}</span>`).join(' ')}</div>
  <div class="card sub">Everything you both do adds to one team total: to-do ${P.todo} · fix ${P.fix} · spotting a fix ${P.fixReq} · using food ${P.used} (+${P.beforeExp} before it expires) · purchase ${P.bought} · receipt scan ${P.scan} · chores & home care too. Spend team points together in the Rewards shop.</div>
@@ -477,7 +479,7 @@ function sundayCard(){const d=new Date().getDay();if(d>1||localStorage.recapSeen
  const we=+weekStart(Date.now()),ws=we-7*864e5;const unlocked=S.logs.filter(l=>l.type==='redeem'&&l.at>=ws&&l.at<we).map(l=>l.name);
  return recap(ws,we,'Last week we…',`<div style="margin-top:6px">🔥 ${stats().st}-day team streak</div>${unlocked.length?`<div style="margin-top:6px">🎁 Unlocked: ${unlocked.map(esc).join(', ')}</div>`:''}<button class="s" id="recapX" style="margin-top:12px;width:100%">Nice! 👍</button>`)}
 // ===== Today home =====
-const BIGTILES=[['dinner',"What's for dinner?",'3 ideas from what you have'],['baby','Baby','Feed, sleep, diapers']];
+const BIGTILES=[['dinner',"What's for dinner?",'3 ideas from what you have'],['baby','Baby','Feed, sleep, diapers'],['guide','How to use','Quick guide to every feature']];
 const TILES=[['week','🗓️','Meal plan'],['q:scan','📷','Scan receipt'],['q:fix','🔧','Fix It'],['q:todo','➕','Add to-do'],['q:use','🥄','Log used'],
  ['t:todos','✅','To-dos'],['t:shop','🛒','Groceries'],['t:stock','🥫','Pantry'],['t:cal','📅','Calendar'],
  ['meals','🍽️','Meals'],['chores','🧹','Chores'],['rewards','🎁','Rewards'],['budget','💵','Budget & waste'],
@@ -494,7 +496,7 @@ function vHome(){const t=today(),tm=stats(),g=goal(),pc=Math.min(100,Math.round(
  const pri=x=>x.due&&x.due<t?'<span class="pill hi">Overdue</span>':x.fixId?'<span class="pill md">Fix It</span>':'';
  const line=(txt,go)=>`<div class="card row" data-go="${go}"><div>${txt}</div><span class="n sub">›</span></div>`;
  const extras=[fx&&line(`🔧 ${fx} open Fix It`,'t:fix'),sh&&line(`🛒 ${sh} on the shopping list`,'t:shop'),md.length&&line(`🛠️ ${esc(md[0].name)}${md.length>1?` +${md.length-1}`:''}`,'maint'),dm&&line(`🍽️ Tonight: ${esc(dm.name)}`,'week'),nd&&nd.days<=14&&line(`📅 ${esc(nd.name)} ${nd.days===0?'is today 🎉':'in '+nd.days+' days'}`,'dates')].filter(Boolean);
- return nudgeBanner()+pushCard()+(localStorage.hintDone?'':`<div class="card"><b>Welcome 👋</b><div class="sub" style="margin:6px 0 10px">This is your Today screen. Tap a button to scan a receipt, report something broken, add a to-do or log food you used. Everything syncs between your phones and adds to one team score.</div><button class="s" id="hintX">Got it</button></div>`)+
+ return nudgeBanner()+pushCard()+(localStorage.hintDone?'':`<div class="card flat"><div class="ut">Welcome to Arpero Family</div><div class="sub" style="margin:6px 0 12px">Your home app for the two of you. Take the 2-minute tour to see what everything does.</div><div class="row"><button id="tourGo">Take the tour</button><button class="s" id="hintX">Maybe later</button></div></div>`)+
 
  `<div class="card goal row" data-go="score"><div class="star n">${icon('star')}</div><div><div><b>${tm.wk} / ${g}</b> <span class="sub">pts this week</span></div><div class="sub" style="margin:2px 0 8px">Team goal progress</div><div class="bar"><i style="width:${pc}%;background:var(--g)"></i></div></div><div class="n center" style="color:var(--o);font-weight:500"><div style="font-size:24px">🔥</div>${tm.st}d</div></div>`+useSoonCard()+babyHomeCard()+tilesGrid()+
  sundayCard()+chCard()+
@@ -505,7 +507,7 @@ function vHome(){const t=today(),tm=stats(),g=goal(),pc=Math.min(100,Math.round(
  `<div class="addrow" data-q="todo">＋ Add new to-do</div></div>`+
  (todo.length+ch.length?'':'<p class="sub center">All clear for today ✨</p>')+
  shoutCard()+monthCard()+(extras.length?`<div class="list">${extras.join('')}</div>`:'')}
-const SUBS=[['dinner','🍽️',"What's for dinner?"],['week','🗓️','Meal plan'],['baby','👶','Baby'],['fixit','🔧','Fix It requests'],['budget','💵','Budget & waste'],['compare','📊','Bought vs used'],['meals','🍽️','Meal planner'],['chores','🧹','Chores'],['rewards','🎁','Rewards shop'],['maint','🛠️','Home care'],['dates','💑','Date night & dates'],['challenges','🏅','Challenges'],['score','🏡','Team & settings']];
+const SUBS=[['guide','📖','How to use'],['dinner','🍽️',"What's for dinner?"],['week','🗓️','Meal plan'],['baby','👶','Baby'],['fixit','🔧','Fix It requests'],['budget','💵','Budget & waste'],['compare','📊','Bought vs used'],['meals','🍽️','Meal planner'],['chores','🧹','Chores'],['rewards','🎁','Rewards shop'],['maint','🛠️','Home care'],['dates','💑','Date night & dates'],['challenges','🏅','Challenges'],['score','🏡','Team & settings']];
 function vMore(){return '<div class="list">'+SUBS.map(([k,i,l])=>`<div class="card row" data-sub="${k}"><span class="n" style="font-size:24px">${i}</span><b>${l}</b><span class="n sub">›</span></div>`).join('')+'</div>'}
 function vBudget(){const now=new Date(),ms=+new Date(now.getFullYear(),now.getMonth(),1),b=+S.meta.budget||0;
  const L=S.logs.filter(l=>l.at>=ms&&l.item),cat={};let spent=0,waste=0;
@@ -714,9 +716,15 @@ function visitSheet(b){sheet(`<h2>Doctor visit or vaccine</h2>${bWho(b)}<label>T
 function routineSheet(b){sheet(`<h2>${esc(b.name)}'s routine</h2><p class="sub">One per line: time and what. Example: 13:30 Nap</p><textarea id="rt" rows="10" style="font-size:16px">${esc(routineOf(b).map(x=>x.t+' '+x.what).join('\n'))}</textarea>`,
  ()=>save('babies',{...b,routine:$('#rt').value}))}
 
-const VIEWS={dinner:vDinner,week:vWeek,baby:vBaby,fixit:()=>{setTimeout(()=>{S.tab='fix';S.sub=null;R()});return''},budget:vBudget,compare:()=>vStats(),meals:vMeals,chores:vChores,rewards:vRewards,maint:vMaint,dates:vDates,challenges:vChallenges,score:()=>vGame()};
+function vGuide(){const G=window.GUIDE||[],q=(S.gq||'').toLowerCase().trim(),strip=h=>h.replace(/<[^>]+>/g,' ').toLowerCase();
+ const L=G.map((g,i)=>({g,i})).filter(({g})=>!q||(g[1]+' '+strip(g[2])).toLowerCase().includes(q));
+ return `<p class="sub" style="margin:4px 4px 12px">Short and simple. Tap a section to open it.</p><input id="gq" type="search" placeholder="Search the guide" value="${esc(S.gq||'')}" style="margin-bottom:12px"><div class="card flat guide">${L.map(({g,i})=>`<details ${q||S.gopen===i?'open':''}><summary><span class="gi">${g[0]}</span><span>${g[1]}</span></summary><div class="gb">${g[2]}</div></details>`).join('')||'<p class="sub">No match. Try another word.</p>'}</div>`}
+const VIEWS={guide:vGuide,dinner:vDinner,week:vWeek,baby:vBaby,fixit:()=>{setTimeout(()=>{S.tab='fix';S.sub=null;R()});return''},budget:vBudget,compare:()=>vStats(),meals:vMeals,chores:vChores,rewards:vRewards,maint:vMaint,dates:vDates,challenges:vChallenges,score:()=>vGame()};
 const plog=(type,pts,extra={})=>save('logs',{id:uid(),type,pts,by:S.me,at:Date.now(),...extra});
 function bindExtra(on){
+ on('#tourGo',()=>{localStorage.hintDone=1;S.tab='more';S.sub='guide';S.gopen=0;R();scrollTo(0,0)});
+ {const g=$('#main').querySelector('#gq');if(g)g.oninput=()=>{S.gq=g.value;const c=g.selectionStart;R();const n=$('#gq');n.focus();n.setSelectionRange(c,c)}}
+
  on('[data-us-use]',e=>qtyLog(S.items.find(x=>x.id===e.dataset.usUse),'used'));
  on('[data-us-more]',e=>itemMore(S.items.find(x=>x.id===e.dataset.usMore)));
  on('[data-us-waste]',e=>tossed(S.items.find(x=>x.id===e.dataset.usWaste)));
