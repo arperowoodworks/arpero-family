@@ -95,11 +95,14 @@ function afterLinkSheet(){if(!linkNote)return;linkNote=false;const u=auth.curren
 let unsubs=[];
 A.onAuthStateChanged(auth,u=>{unsubs.forEach(f=>f());unsubs=[];
  if(!u){$('#login').hidden=false;$('#app').hidden=true;return}
- S.me=who(u.email);$('#login').hidden=true;$('#app').hidden=false;setTimeout(afterLinkSheet,300);
+ retried=0;S.me=who(u.email);$('#login').hidden=true;$('#app').hidden=false;setTimeout(afterLinkSheet,300);startListeners(u)});
+function startListeners(u){unsubs.forEach(f=>f());unsubs=[];if(!u)return;
  for(const n of ['todos','items','logs','fixes','meals','chores','rewards','maint','ideas','dates','shop'])unsubs.push(F.onSnapshot(col(n),s=>{S[n]=s.docs.map(d=>d.data());if(n==='fixes')notifyFix();R()},err=>denied(err)));
  unsubs.push(F.onSnapshot(dref('meta','settings'),s=>{if(s.exists())S.meta=s.data();R()},()=>{}));
-});
-function denied(e){$('#app').hidden=true;$('#login').hidden=false;$('#lmsg').innerHTML='This account ('+esc(auth.currentUser?.email)+') is not on the family list.<br><a href="#" id="so">Sign out</a>';$('#so').onclick=()=>A.signOut(auth)}
+}
+let retried=0;function denied(e){console.error('Firestore listener error',e);const c=e&&e.code||'';
+ if(c!=='permission-denied'||retried<2){if(!denied.t){denied.t=setTimeout(async()=>{denied.t=0;retried++;try{await auth.currentUser?.getIdToken(true)}catch(_){}startListeners(auth.currentUser)},1500*(retried+1))}if(c!=='permission-denied')return;if(retried<2)return}
+ $('#app').hidden=true;$('#login').hidden=false;$('#lmsg').innerHTML='This account ('+esc(auth.currentUser?.email)+') is not on the family list.<br><small>('+esc(e&&e.code||'')+')</small><br><a href="#" id="rt">Try again</a> · <a href="#" id="so">Sign out</a>';$('#so').onclick=()=>A.signOut(auth);$('#rt').onclick=ev=>{ev.preventDefault();retried=0;$('#login').hidden=true;$('#app').hidden=false;auth.currentUser?.getIdToken(true).finally(()=>startListeners(auth.currentUser))}}
 // ---------- points ----------
 const P={cook:5,maint:5,todo:10,used:2,beforeExp:3,bought:1,scan:5,fixReq:2,fix:25};
 function events(){const ev=[];
