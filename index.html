@@ -84,6 +84,8 @@ const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>
 const today=()=>new Date().toLocaleDateString('en-CA'),uid=()=>Math.random().toString(36).slice(2,10);
 const col=n=>F.collection(db,'families','arpero',n),dref=(n,id)=>F.doc(db,'families','arpero',n,id);
 const S={todos:[],items:[],logs:[],fixes:[],meta:{names:{oscar:'Oscar',wife:'Kerissa'}},tab:'home',sub:null,pantrySeg:'stock',meals:[],chores:[],rewards:[],maint:[],ideas:[],dates:[],shop:[],shouts:[],me:null,cmp:'week',seenFix:+localStorage.seenFix||0};
+{const g=new URLSearchParams(location.search).get('go');if(g==='fix')S.tab='fix';else if(g)S.tab='home'}
+if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.go){S.tab=e.data.go==='fix'?'fix':'home';S.sub=null;typeof R==='function'&&R();scrollTo(0,0)}});
 const who=e=>(e||'').toLowerCase()===OSCAR?'oscar':'wife',nm=k=>{const v=S.meta.names?.[k];return (v&&v!=='Wife'?v:0)||({oscar:'Oscar',wife:'Kerissa'})[k]||k};
 const save=(n,o)=>F.setDoc(dref(n,o.id),o,{merge:true}),del=(n,id)=>F.deleteDoc(dref(n,id));
 const prov=()=>{const p=new A.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});return p};
@@ -113,7 +115,7 @@ let unsubs=[],calApi=null;const calEl=document.createElement('div');
 A.onAuthStateChanged(auth,u=>{unsubs.forEach(f=>f());unsubs=[];
  if(!u){$('#login').hidden=false;$('#app').hidden=true;return}
  retried=0;S.me=who(u.email);$('#login').hidden=true;$('#app').hidden=false;setTimeout(afterLinkSheet,300);startListeners(u)});
-function startListeners(u){unsubs.forEach(f=>f());unsubs=[];if(!u)return;
+function startListeners(u){unsubs.forEach(f=>f());unsubs=[];if(!u)return;setTimeout(refreshSub,2500);
  if(!calApi){import('./cal.js?v=8').then(m=>{calApi=m.initCal({db,F,me:S.me,el:calEl,app:'family',names:{oscar:nm('oscar'),wife:nm('wife')}});if(S.tab==='cal')R()})}
  for(const n of ['todos','items','logs','fixes','meals','chores','rewards','maint','ideas','dates','shop','shouts'])unsubs.push(F.onSnapshot(col(n),s=>{S[n]=s.docs.map(d=>d.data());if(n==='fixes')notifyFix();R()},err=>denied(err)));
  unsubs.push(F.onSnapshot(dref('meta','settings'),s=>{if(s.exists())S.meta=s.data();R()},()=>{}));
@@ -153,7 +155,7 @@ function notifyFix(){const open=S.fixes.filter(f=>f.status!=='fixed');
  firstFix=false}
 // ---------- render ----------
 const TABS=[['home','home','Today'],['todos','todos','To-dos'],['pantry','pantry','Groceries'],['cal','cal','Calendar'],['more','more','More']];
-function R(){
+function R(){pulseSoon();
  const openFix=S.fixes.filter(f=>f.status!=='fixed'&&(S.me!=='oscar'||f.at>S.seenFix||f.status==='open')).length;
  $('#nav').innerHTML=TABS.map(([k,i,l])=>`<button class="${S.tab===k?'on':''}" data-t="${k}">${icon(i)}${l}${k==='more'&&openFix?`<span class="badge">${openFix}</span>`:''}</button>`).join('');
  $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.t;S.sub=null;if(S.tab==='fix'){S.seenFix=Date.now();localStorage.seenFix=S.seenFix}R();scrollTo(0,0)});
@@ -214,7 +216,7 @@ function vGame(){const t=stats();
  `<h2>Team badges</h2><div class="card">${t.B.map(([i,l,on])=>`<span class="pill" style="opacity:${on?1:.3};margin:3px 2px">${i} ${l}</span>`).join(' ')}</div>
  <div class="card sub">Everything you both do adds to one team total: to-do ${P.todo} · fix ${P.fix} · spotting a fix ${P.fixReq} · using food ${P.used} (+${P.beforeExp} before it expires) · purchase ${P.bought} · receipt scan ${P.scan} · chores & home care too. Spend team points together in the Rewards shop.</div>
  <div class="card"><label class="sub">Weekly team goal (points)</label><div class="row"><input id="tg" type="number" inputmode="numeric" value="${goal()}"><button class="n" id="saveG">Save</button></div>
- <label class="sub" style="margin-top:14px;display:block">Daily nudge (one a day, shown when you open the app)</label><div class="row"><select id="nOn"><option value="1" ${(S.meta.nudge?.[S.me]?.on)!==false?'selected':''}>On</option><option value="0" ${(S.meta.nudge?.[S.me]?.on)===false?'selected':''}>Off</option></select><input id="nT" type="time" value="${S.meta.nudge?.[S.me]?.time||'08:00'}"><button class="n" id="saveNudge">Save</button></div><label class="sub" style="margin-top:14px;display:block">Names</label><div class="row"><input id="n1" value="${esc(nm('oscar'))}"><input id="n2" value="${esc(nm('wife'))}"><button class="n" id="saveN">Save</button></div>
+ <label class="sub" style="margin-top:14px;display:block">Daily nudge (one a day, at this time)</label><div class="row"><select id="nOn"><option value="1" ${(S.meta.nudge?.[S.me]?.on)!==false?'selected':''}>On</option><option value="0" ${(S.meta.nudge?.[S.me]?.on)===false?'selected':''}>Off</option></select><input id="nT" type="time" value="${S.meta.nudge?.[S.me]?.time||'08:00'}"><button class="n" id="saveNudge">Save</button></div><label class="sub" style="margin-top:14px;display:block">Phone notifications</label>${pushRow()}<label class="sub" style="margin-top:14px;display:block">Names</label><div class="row"><input id="n1" value="${esc(nm('oscar'))}"><input id="n2" value="${esc(nm('wife'))}"><button class="n" id="saveN">Save</button></div>
  <p class="sub">Signed in as ${esc(auth.currentUser?.email)} · <a href="#" id="so2">Sign out</a></p></div>`}
 // ---------- sheets ----------
 function sheet(html,onSave){$('#sheet').innerHTML=`<div class="sheet"><div>${html}<div class="row" style="margin-top:14px"><button class="s" id="shX">Cancel</button>${onSave?'<button id="shOk">Save</button>':''}</div></div></div>`;
@@ -327,6 +329,32 @@ function nudgeText(){const n=S.meta.nudge?.[S.me]||{};if(n.on===false)return'';
  const tm=stats(),g=goal(),left=g-tm.wk;if(left>0&&new Date().getDay()>=4)return`⭐ ${left} pts to hit the team goal. ${S.chores.filter(c=>c.next<=today()).length?S.chores.filter(c=>c.next<=today()).length+' chore(s) would get you closer!':'You got this!'}`;
  const low=lowItems()[0];if(low)return`🛒 ${esc(low.name)} is running low`;
  const ch=S.chores.find(c=>c.next<=today()&&c.turn===S.me);if(ch)return`🧹 ${esc(ch.name)} is ready when you are`;return''}
+
+// ---------- real push (standard Web Push, own VAPID key; sent by GitHub Actions) ----------
+const VAPID='BM1fmtr7aoHRiyxaKfhLv7Hy4YvxPELGPlFfjV2v65_KxMagp9S1aKlMtluvEWnnxZrcAWjMEaBu3XD20eimUK0';
+const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const pushOK=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+const pushOn=()=>pushOK()&&Notification.permission==='granted'&&localStorage.pushId;
+const b64u=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');s+='='.repeat((4-s.length%4)%4);return Uint8Array.from(atob(s),c=>c.charCodeAt(0))};
+async function pushHash(t){const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(h)].slice(0,10).map(b=>b.toString(16).padStart(2,'0')).join('')}
+async function saveSub(sub){const j=JSON.parse(JSON.stringify(sub)),id='p_'+await pushHash(j.endpoint);localStorage.pushId=id;await save('push',{id,who:S.me,sub:j,ua:navigator.userAgent.slice(0,120),at:Date.now()})}
+function homeScreenHelp(){sheet(`<h2>🔔 One quick step first</h2><p>iPhone only allows notifications for apps on your Home Screen.</p><ol style="font-size:17px;line-height:1.7;padding-left:22px"><li>Open this page in <b>Safari</b></li><li>Tap the <b>Share</b> button <span style="font-size:20px">⬆︎</span> at the bottom</li><li>Tap <b>Add to Home Screen</b>, then <b>Add</b></li><li>Open <b>Arpero Family</b> from your Home Screen and tap <b>Allow notifications</b> again</li></ol><p class="sub">Needs iOS 16.4 or newer.</p>`)}
+async function enablePush(){
+ if(isIOS&&!standalone())return homeScreenHelp();
+ if(!pushOK())return alert('This browser can\'t do notifications. On iPhone, add the app to your Home Screen first (iOS 16.4+).');
+ const perm=await Notification.requestPermission();if(perm!=='granted')return alert('Notifications are off. To turn them on: Settings → Notifications → Arpero Family → Allow.');
+ try{const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID)});await saveSub(sub);celebrate('Notifications on');R()}catch(e){alert('Couldn\'t turn on notifications: '+e.message)}}
+async function disablePush(){try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(sub)await sub.unsubscribe()}catch(e){}if(localStorage.pushId)await del('push',localStorage.pushId).catch(()=>{});delete localStorage.pushId;R()}
+async function refreshSub(){if(!pushOK()||Notification.permission!=='granted')return;try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(sub)await saveSub(sub);else delete localStorage.pushId}catch(e){}}
+function pushCard(){if(pushOn()||localStorage.pushHide)return'';return `<div class="card row"><div style="flex:1"><b>🔔 Get a gentle reminder</b><div class="sub">One nudge a day, plus Fix Its and thank-yous right away.</div></div><button class="n" id="pushGo" style="border-radius:20px;padding:10px 14px">Allow</button><button class="d n" id="pushHide" style="color:var(--m)">✕</button></div>`}
+function pushRow(){return pushOn()?`<div class="row"><div style="flex:1">🔔 Notifications are on for this phone</div><button class="s n" id="pushOff">Turn off</button></div>`:`<button id="pushGo2" style="width:100%">🔔 Allow notifications</button>`}
+// small summary the reminder sender reads (no points logic on the server)
+let pulseT,lastPulse='';
+function pulseSoon(){clearTimeout(pulseT);pulseT=setTimeout(()=>{try{const t=stats(),g=goal();const ev=events(),td=today();
+ const p={wk:t.wk,goal:g,streak:t.st,low:lowItems().slice(0,3).map(i=>i.name),chores:S.chores.filter(c=>c.next<=td).map(c=>({name:c.name,turn:c.turn})).slice(0,6)};
+ const lastAct=ev.reduce((a,e)=>Math.max(a,e.at||0),0);p.lastActDay=lastAct?new Date(lastAct).toLocaleDateString('en-CA'):'';
+ const j=JSON.stringify(p);if(j===lastPulse)return;lastPulse=j;F.setDoc(dref('meta','pulse'),{...p,at:Date.now()}).catch(()=>{})}catch(e){}},4000)}
 function nudgeBanner(){const d=today();if(localStorage.nudgeDay===d&&localStorage.nudgeShown!=='open')return'';const txt=nudgeText();if(!txt)return'';
  if(localStorage.nudgeDay!==d){localStorage.nudgeDay=d;localStorage.nudgeShown='open'}
  return `<div class="nudge"><div style="flex:1">${txt}</div><button class="d n" id="nudgeX" style="color:var(--m)">✕</button></div>`}
@@ -368,7 +396,7 @@ function vHome(){const t=today(),tm=stats(),g=goal(),pc=Math.min(100,Math.round(
  const pri=x=>x.due&&x.due<t?'<span class="pill hi">Overdue</span>':x.fixId?'<span class="pill md">Fix It</span>':'';
  const line=(txt,go)=>`<div class="card row" data-go="${go}"><div>${txt}</div><span class="n sub">›</span></div>`;
  const extras=[fx&&line(`🔧 ${fx} open Fix It`,'t:fix'),sh&&line(`🛒 ${sh} on the shopping list`,'t:shop'),md.length&&line(`🛠️ ${esc(md[0].name)}${md.length>1?` +${md.length-1}`:''}`,'maint'),dm&&line(`🍽️ Tonight: ${esc(dm.name)}`,'meals'),nd&&nd.days<=14&&line(`📅 ${esc(nd.name)} ${nd.days===0?'is today 🎉':'in '+nd.days+' days'}`,'dates')].filter(Boolean);
- return nudgeBanner()+(localStorage.hintDone?'':`<div class="card"><b>Welcome 👋</b><div class="sub" style="margin:6px 0 10px">This is your Today screen. Tap a button to scan a receipt, report something broken, add a to-do or log food you used. Everything syncs between your phones and adds to one team score.</div><button class="s" id="hintX">Got it</button></div>`)+
+ return nudgeBanner()+pushCard()+(localStorage.hintDone?'':`<div class="card"><b>Welcome 👋</b><div class="sub" style="margin:6px 0 10px">This is your Today screen. Tap a button to scan a receipt, report something broken, add a to-do or log food you used. Everything syncs between your phones and adds to one team score.</div><button class="s" id="hintX">Got it</button></div>`)+
  `<div class="qa">${[['scan','scan','Scan Receipt'],['fix','fix','Fix It'],['todo','add','Add To-Do'],['use','used','Log Used']].map(([a,i,l])=>`<button data-q="${a}">${icon(i)}${l}</button>`).join('')}</div>
  <div class="card goal row" data-go="score"><div class="star n">${icon('star')}</div><div><div><b>${tm.wk} / ${g}</b> <span class="sub">pts this week</span></div><div class="sub" style="margin:2px 0 8px">Team goal progress</div><div class="bar"><i style="width:${pc}%;background:var(--g)"></i></div></div><div class="n center" style="color:var(--o);font-weight:600"><div style="font-size:24px">🔥</div>${tm.st}d</div></div>`+
  sundayCard()+chCard()+
@@ -442,6 +470,7 @@ function bindExtra(on){
  on('[data-redeem]',async e=>{const r=S.rewards.find(x=>x.id===e.dataset.redeem);if(stats().bal<r.cost||!confirm(`Unlock "${r.name}" for ${r.cost} team points?`))return;await plog('redeem',0,{name:r.name,cost:r.cost});celebrate('🎁')});
  on('[data-thx]',e=>sendThanks(e.dataset.thx,e.dataset.txt));on('#nudgeX',()=>{localStorage.nudgeShown='closed';R()});on('#recapX',()=>{localStorage.recapSeen=String(+weekStart(Date.now()));R()});on('#pickMonth',pickMonth);
  on('[data-chstart]',e=>F.setDoc(dref('meta','settings'),{challenge:{id:e.dataset.chstart,start:Date.now()}},{merge:true}));on('#quitCh',()=>confirm('Stop this challenge?')&&F.setDoc(dref('meta','settings'),{challenge:null},{merge:true}));
+ on('#pushGo',enablePush);on('#pushGo2',enablePush);on('#pushOff',()=>confirm('Turn off notifications on this phone?')&&disablePush());on('#pushHide',()=>{localStorage.pushHide=1;R()});
  on('#saveNudge',()=>F.setDoc(dref('meta','settings'),{nudge:{[S.me]:{on:$('#nOn').value==='1',time:$('#nT').value||'08:00'}}},{merge:true}).then(()=>celebrate('Saved')));
  on('#seedR',async()=>{for(const [n,c] of [['🍿 Movie night',150],['🥡 Takeout night',300],['🍦 Ice cream run',100],['💑 Date night out',500],['😴 Sleep-in Saturday',250]])await save('rewards',{id:uid(),name:n,cost:c})});
  on('#saveG',()=>F.setDoc(dref('meta','settings'),{goal:+val('tg')||300},{merge:true}));

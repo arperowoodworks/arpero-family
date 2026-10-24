@@ -1,0 +1,1 @@
+{"name":"arpero-push","private":true,"type":"module","dependencies":{"firebase-admin":"^13.0.0","web-push":"^3.6.7"}}
