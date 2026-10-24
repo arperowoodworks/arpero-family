@@ -109,11 +109,12 @@ if(A.isSignInWithEmailLink(auth,location.href)){let e=localStorage.emailForSignI
 function afterLinkSheet(){if(!linkNote)return;linkNote=false;const u=auth.currentUser;
  sheet(`<h2>You're signed in! 🎉</h2><p>Next time, just tap the <b>Arpero Family</b> icon on your home screen.</p><p class="sub">If the home-screen app asks you to sign in again, create a password below, then in the app tap <b>Sign in with email → Use a password instead</b>.</p><label>New password (optional)</label><input id="npw" type="password" autocomplete="new-password" placeholder="At least 6 characters"><button id="npwb" style="width:100%;margin-top:10px">Save password</button><p id="npwm" class="sub"></p>`);
   $('#npwb').onclick=async()=>{try{await A.updatePassword(u,$('#npw').value);$('#npwm').textContent='✅ Password saved. Use it in the home-screen app.'}catch(x){$('#npwm').textContent=errTxt(x)}}}
-let unsubs=[];
+let unsubs=[],calApi=null;const calEl=document.createElement('div');
 A.onAuthStateChanged(auth,u=>{unsubs.forEach(f=>f());unsubs=[];
  if(!u){$('#login').hidden=false;$('#app').hidden=true;return}
  retried=0;S.me=who(u.email);$('#login').hidden=true;$('#app').hidden=false;setTimeout(afterLinkSheet,300);startListeners(u)});
 function startListeners(u){unsubs.forEach(f=>f());unsubs=[];if(!u)return;
+ if(!calApi){import('./cal.js?v=8').then(m=>{calApi=m.initCal({db,F,me:S.me,el:calEl,app:'family',names:{oscar:nm('oscar'),wife:nm('wife')}});if(S.tab==='cal')R()})}
  for(const n of ['todos','items','logs','fixes','meals','chores','rewards','maint','ideas','dates','shop','shouts'])unsubs.push(F.onSnapshot(col(n),s=>{S[n]=s.docs.map(d=>d.data());if(n==='fixes')notifyFix();R()},err=>denied(err)));
  unsubs.push(F.onSnapshot(dref('meta','settings'),s=>{if(s.exists())S.meta=s.data();R()},()=>{}));
 }
@@ -151,15 +152,15 @@ function notifyFix(){const open=S.fixes.filter(f=>f.status!=='fixed');
  if(!firstFix&&S.me==='oscar'){const nw=S.fixes.filter(f=>f.at>S.seenFix&&f.by!=='oscar');if(nw.length&&'Notification'in window&&Notification.permission==='granted')new Notification('New Fix It request',{body:nw[0].note||'Something needs fixing',icon:'icon-180.png'})}
  firstFix=false}
 // ---------- render ----------
-const TABS=[['home','home','Today'],['todos','todos','To-dos'],['pantry','pantry','Groceries'],['fix','fix','Fix It'],['more','more','More']];
+const TABS=[['home','home','Today'],['todos','todos','To-dos'],['pantry','pantry','Groceries'],['cal','cal','Calendar'],['more','more','More']];
 function R(){
  const openFix=S.fixes.filter(f=>f.status!=='fixed'&&(S.me!=='oscar'||f.at>S.seenFix||f.status==='open')).length;
- $('#nav').innerHTML=TABS.map(([k,i,l])=>`<button class="${S.tab===k?'on':''}" data-t="${k}">${icon(i)}${l}${k==='fix'&&openFix?`<span class="badge">${openFix}</span>`:''}</button>`).join('');
+ $('#nav').innerHTML=TABS.map(([k,i,l])=>`<button class="${S.tab===k?'on':''}" data-t="${k}">${icon(i)}${l}${k==='more'&&openFix?`<span class="badge">${openFix}</span>`:''}</button>`).join('');
  $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.t;S.sub=null;if(S.tab==='fix'){S.seenFix=Date.now();localStorage.seenFix=S.seenFix}R();scrollTo(0,0)});
- checkCh();$('#ttl').textContent=S.tab==='home'?'Arpero Family':S.sub?SUBS.find(x=>x[0]===S.sub)[2]:TABS.find(t=>t[0]===S.tab)[2];
+ checkCh();$('#ttl').textContent=S.tab==='home'?'Arpero Family':S.sub?SUBS.find(x=>x[0]===S.sub)[2]:S.tab==='fix'?'Fix It':TABS.find(t=>t[0]===S.tab)[2];
  const st=stats(),h=new Date().getHours();$('#who').textContent=S.tab==='home'?`Good ${h<12?'morning':h<17?'afternoon':'evening'}, ${nm(S.me)} 🧡`:`Team level ${st.lvl} · 🔥 ${st.st}-day streak`;$('#who').style.display=S.tab==='home'||!S.sub?'':'none';
  $('#addBtn').hidden=!['todos','pantry','fix'].includes(S.tab);
- $('#main').innerHTML=S.sub?(S.sub!=='more'?'<a href="#" data-sub="" style="display:inline-block;margin:2px 4px 6px;font-size:17px;text-decoration:none">‹ More</a>':'')+VIEWS[S.sub]():({home:vHome,todos:vTodos,pantry:vPantry,fix:vFix,more:vMore})[S.tab]();
+ $('#main').innerHTML=S.sub?(S.sub!=='more'?'<a href="#" data-sub="" style="display:inline-block;margin:2px 4px 6px;font-size:17px;text-decoration:none">‹ More</a>':'')+VIEWS[S.sub]():(S.tab==='cal'?'':({home:vHome,todos:vTodos,pantry:vPantry,fix:vFix,more:vMore})[S.tab]());if(S.tab==='cal'&&calApi){$('#main').append(calEl);calApi.render()}
  bind()}
 const dueTxt=d=>{if(!d)return'';const t=today();return d<t?`<span class="pill hi">Overdue ${d.slice(5)}</span>`:d===t?'<span class="pill md">Today</span>':`<span class="pill">${d.slice(5)}</span>`};
 let todoFilter='all';
@@ -378,7 +379,7 @@ function vHome(){const t=today(),tm=stats(),g=goal(),pc=Math.min(100,Math.round(
  `<div class="addrow" data-q="todo">＋ Add new to-do</div></div>`+
  (todo.length+ch.length?'':'<p class="sub center">All clear for today ✨</p>')+
  shoutCard()+monthCard()+(extras.length?`<div class="list">${extras.join('')}</div>`:'')}
-const SUBS=[['budget','💵','Budget & waste'],['compare','📊','Bought vs used'],['meals','🍽️','Meal planner'],['chores','🧹','Chores'],['rewards','🎁','Rewards shop'],['maint','🛠️','Home care'],['dates','💑','Date night & dates'],['challenges','🏅','Challenges'],['score','🏡','Team & settings']];
+const SUBS=[['fixit','🔧','Fix It requests'],['budget','💵','Budget & waste'],['compare','📊','Bought vs used'],['meals','🍽️','Meal planner'],['chores','🧹','Chores'],['rewards','🎁','Rewards shop'],['maint','🛠️','Home care'],['dates','💑','Date night & dates'],['challenges','🏅','Challenges'],['score','🏡','Team & settings']];
 function vMore(){return '<div class="list">'+SUBS.map(([k,i,l])=>`<div class="card row" data-sub="${k}"><span class="n" style="font-size:24px">${i}</span><b>${l}</b><span class="n sub">›</span></div>`).join('')+'</div>'}
 function vBudget(){const now=new Date(),ms=+new Date(now.getFullYear(),now.getMonth(),1),b=+S.meta.budget||0;
  const L=S.logs.filter(l=>l.at>=ms&&l.item),cat={};let spent=0,waste=0;
@@ -419,7 +420,7 @@ function vDates(){const nd=nextDates(),ideas=S.ideas.filter(i=>!i.done);
  ${nd.map(d=>`<div class="card row" data-dt="${d.id}"><div><b>${esc(d.name)}</b><div class="sub">${new Date(d.next+'T12:00').toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'})}${d.yrs>0&&/anniv/i.test(d.name)?' · '+d.yrs+' years 💍':''}</div></div><div class="n center"><div class="big" style="font-size:24px">${d.days}</div><div class="sub">days</div></div></div>`).join('')}<button class="s" id="newDate" style="width:100%">＋ Add a date (birthday, bill, anniversary)</button>`}
 function editDate(d={}){sheet(`<h2>${d.id?'Edit':'New'} date</h2><label>Name</label><input id="dn" value="${esc(d.name)}" placeholder="Kerissa's birthday"><label>Date</label><input id="dd" type="date" value="${d.date||''}"><label>Repeats</label><select id="dy"><option value="1" ${d.yearly!==false?'selected':''}>Every year</option><option value="0" ${d.yearly===false?'selected':''}>One time</option></select>${d.id?'<button class="d" id="ddel">Delete</button>':''}`,
  ()=>{if(!val('dn')||!$('#dd').value)return false;save('dates',{id:d.id||uid(),name:val('dn'),date:$('#dd').value,yearly:$('#dy').value==='1'})});if(d.id)$('#ddel').onclick=()=>{del('dates',d.id);close()}}
-const VIEWS={budget:vBudget,compare:()=>vStats(),meals:vMeals,chores:vChores,rewards:vRewards,maint:vMaint,dates:vDates,challenges:vChallenges,score:()=>vGame()};
+const VIEWS={fixit:()=>{setTimeout(()=>{S.tab='fix';S.sub=null;R()});return''},budget:vBudget,compare:()=>vStats(),meals:vMeals,chores:vChores,rewards:vRewards,maint:vMaint,dates:vDates,challenges:vChallenges,score:()=>vGame()};
 const plog=(type,pts,extra={})=>save('logs',{id:uid(),type,pts,by:S.me,at:Date.now(),...extra});
 function bindExtra(on){
  on('[data-sub]',e=>{S.tab='more';S.sub=e.dataset.sub||null;R();scrollTo(0,0)});
