@@ -162,7 +162,7 @@ if (settings.hb?.setup && hm >= '08:00') {
   const ym = day.slice(0, 7), [yy, mo] = ym.split('-').map(Number), dim = new Date(yy, mo, 0).getDate(), in3 = addD0(day, 3);
   const bills = await store.col(`${BASE}/bills`);
   for (const b of bills) {
-    if (b.auto) continue;
+    if (b.auto || (b.freq !== 'biweekly' && !+b.due)) continue;
     if (b.freq === 'biweekly') {
       if (!b.next) continue;
       const dd = Math.round((Date.parse(day + 'T12:00Z') - Date.parse(b.next + 'T12:00Z')) / 864e5), d3 = dd + 3, mod = n => ((n % 14) + 14) % 14;
