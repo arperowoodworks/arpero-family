@@ -57,8 +57,8 @@ const OSCAR='oskararpero@gmail.com';
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 const today=()=>new Date().toLocaleDateString('en-CA'),uid=()=>Math.random().toString(36).slice(2,10);
 const col=n=>F.collection(db,'families','arpero',n),dref=(n,id)=>F.doc(db,'families','arpero',n,id);
-const S={todos:[],items:[],logs:[],fixes:[],meta:{names:{oscar:'Oscar',wife:'Wife'}},tab:'todos',me:null,cmp:'week',seenFix:+localStorage.seenFix||0};
-const who=e=>e===OSCAR?'oscar':'wife',nm=k=>S.meta.names?.[k]||k;
+const S={todos:[],items:[],logs:[],fixes:[],meta:{names:{oscar:'Oscar',wife:'Wife'}},tab:'home',sub:null,pantrySeg:'stock',meals:[],chores:[],rewards:[],maint:[],ideas:[],dates:[],shop:[],me:null,cmp:'week',seenFix:+localStorage.seenFix||0};
+const who=e=>e===OSCAR?'oscar':'wife',nm=k=>S.meta.names?.[k]||({oscar:'Oscar',wife:'Wife'})[k]||k;
 const save=(n,o)=>F.setDoc(dref(n,o.id),o,{merge:true}),del=(n,id)=>F.deleteDoc(dref(n,id));
 const prov=()=>{const p=new A.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});return p};
 $('#gbtn').onclick=async()=>{try{await A.signInWithPopup(auth,prov())}catch(e){if(['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/web-storage-unsupported'].includes(e.code))return A.signInWithRedirect(auth,prov());$('#lmsg').textContent=e.message}};
@@ -66,17 +66,18 @@ let unsubs=[];
 A.onAuthStateChanged(auth,u=>{unsubs.forEach(f=>f());unsubs=[];
  if(!u){$('#login').hidden=false;$('#app').hidden=true;return}
  S.me=who(u.email);$('#login').hidden=true;$('#app').hidden=false;
- for(const n of ['todos','items','logs','fixes'])unsubs.push(F.onSnapshot(col(n),s=>{S[n]=s.docs.map(d=>d.data());if(n==='fixes')notifyFix();R()},err=>denied(err)));
+ for(const n of ['todos','items','logs','fixes','meals','chores','rewards','maint','ideas','dates','shop'])unsubs.push(F.onSnapshot(col(n),s=>{S[n]=s.docs.map(d=>d.data());if(n==='fixes')notifyFix();R()},err=>denied(err)));
  unsubs.push(F.onSnapshot(dref('meta','settings'),s=>{if(s.exists())S.meta=s.data();R()},()=>{}));
 });
 function denied(e){$('#app').hidden=true;$('#login').hidden=false;$('#lmsg').innerHTML='This account ('+esc(auth.currentUser?.email)+') is not on the family list.<br><a href="#" id="so">Sign out</a>';$('#so').onclick=()=>A.signOut(auth)}
 // ---------- points ----------
-const P={todo:10,used:2,beforeExp:3,bought:1,scan:5,fixReq:2,fix:25};
+const P={cook:5,maint:5,todo:10,used:2,beforeExp:3,bought:1,scan:5,fixReq:2,fix:25};
 function events(){const ev=[];
  S.todos.forEach(t=>t.done&&t.doneBy&&ev.push({who:t.doneBy,pts:P.todo,at:t.doneAt,k:'todo'}));
  S.logs.forEach(l=>{if(l.type==='used'){ev.push({who:l.by,pts:P.used+(l.beforeExp?P.beforeExp:0),at:l.at,k:l.beforeExp?'saved':'used'})}
   else if(l.type==='bought')ev.push({who:l.by,pts:P.bought,at:l.at,k:'bought'});
-  else if(l.type==='scan')ev.push({who:l.by,pts:P.scan,at:l.at,k:'scan'})});
+  else if(l.type==='scan')ev.push({who:l.by,pts:P.scan,at:l.at,k:'scan'});
+  else if(l.pts&&l.type!=='redeem')ev.push({who:l.by,pts:l.pts,at:l.at,k:l.type})});
  S.fixes.forEach(f=>{ev.push({who:f.by,pts:P.fixReq,at:f.at,k:'fixreq'});if(f.status==='fixed')ev.push({who:f.fixedBy||'oscar',pts:P.fix,at:f.fixedAt,k:'fix'})});
  return ev.filter(e=>e.who&&e.at)}
 const weekStart=d=>{const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-x.getDay());return x};
@@ -88,8 +89,9 @@ function stats(k){const ev=events().filter(e=>e.who===k),tot=ev.reduce((a,e)=>a+
  const lvl=Math.floor(Math.sqrt(tot/50))+1,cnt=x=>ev.filter(e=>e.k===x).length;
  const B=[['🌱','First points',tot>0],['✅','10 to-dos',cnt('todo')>=10],['🧾','Receipt scanner',cnt('scan')>=1],['🥕','Waste warrior (10 saves)',cnt('saved')>=10],
   ['🔧','Fixer (5 fixes)',cnt('fix')>=5],['🔥','7-day streak',st>=7],['🏆','Level 5',lvl>=5],['💯','500 points',tot>=500]];
- return{tot,wk,st,lvl,next:50*lvl*lvl,B}}
-function celebrate(p){const e=document.createElement('div');e.className='pop';e.textContent='+'+p+' pts';document.body.append(e);setTimeout(()=>e.remove(),1200);
+ const spent=S.logs.filter(l=>l.type==='redeem'&&l.by===k).reduce((a,l)=>a+(+l.cost||0),0);
+ return{tot,wk,st,lvl,next:50*lvl*lvl,B,bal:tot-spent}}
+function celebrate(p){const e=document.createElement('div');e.className='pop';e.textContent=typeof p==='number'?'+'+p+' pts':p;document.body.append(e);setTimeout(()=>e.remove(),1200);
  for(let i=0;i<24;i++){const c=document.createElement('i');c.className='conf';c.style.left=Math.random()*100+'vw';c.style.background=['#0f2d52','#f26a1b','#b8321f','#1f6fa8','#f7a325'][i%5];c.style.animationDelay=Math.random()*.3+'s';document.body.append(c);setTimeout(()=>c.remove(),2100)}
  navigator.vibrate?.(30)}
 // ---------- fix notifications ----------
@@ -99,15 +101,15 @@ function notifyFix(){const open=S.fixes.filter(f=>f.status!=='fixed');
  if(!firstFix&&S.me==='oscar'){const nw=S.fixes.filter(f=>f.at>S.seenFix&&f.by!=='oscar');if(nw.length&&'Notification'in window&&Notification.permission==='granted')new Notification('New Fix It request',{body:nw[0].note||'Something needs fixing',icon:'icon-180.png'})}
  firstFix=false}
 // ---------- render ----------
-const TABS=[['todos','☑️','To-dos'],['pantry','🥫','Pantry'],['fix','🔧','Fix It'],['stats','📊','Compare'],['game','🏆','Score']];
+const TABS=[['home','🏠','Home'],['todos','☑️','To-dos'],['pantry','🥫','Groceries'],['fix','🔧','Fix It'],['more','☰','More']];
 function R(){
  const openFix=S.fixes.filter(f=>f.status!=='fixed'&&(S.me!=='oscar'||f.at>S.seenFix||f.status==='open')).length;
  $('#nav').innerHTML=TABS.map(([k,i,l])=>`<button class="${S.tab===k?'on':''}" data-t="${k}"><b>${i}</b>${l}${k==='fix'&&openFix?`<span class="badge">${openFix}</span>`:''}</button>`).join('');
- $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.t;if(S.tab==='fix'){S.seenFix=Date.now();localStorage.seenFix=S.seenFix}R();scrollTo(0,0)});
- $('#ttl').textContent=TABS.find(t=>t[0]===S.tab)[2];
+ $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.t;S.sub=null;if(S.tab==='fix'){S.seenFix=Date.now();localStorage.seenFix=S.seenFix}R();scrollTo(0,0)});
+ $('#ttl').textContent=S.sub?SUBS.find(x=>x[0]===S.sub)[2]:TABS.find(t=>t[0]===S.tab)[2];
  const st=stats(S.me);$('#who').textContent=`${nm(S.me)} · Lv ${st.lvl} · ${st.tot} pts · 🔥${st.st}`;
- $('#addBtn').hidden=S.tab==='stats'||S.tab==='game';
- $('#main').innerHTML=({todos:vTodos,pantry:vPantry,fix:vFix,stats:vStats,game:vGame})[S.tab]();
+ $('#addBtn').hidden=!['todos','pantry','fix'].includes(S.tab);
+ $('#main').innerHTML=S.sub?(S.sub!=='more'?'<button class="s" data-sub="" style="margin:4px 0">‹ More</button>':'')+VIEWS[S.sub]():({home:vHome,todos:vTodos,pantry:vPantry,fix:vFix,more:vMore})[S.tab]();
  bind()}
 const dueTxt=d=>{if(!d)return'';const t=today();return d<t?`<span class="pill hi">Overdue ${d.slice(5)}</span>`:d===t?'<span class="pill md">Today</span>':`<span class="pill">${d.slice(5)}</span>`};
 let todoFilter='all';
@@ -116,8 +118,8 @@ function vTodos(){let L=S.todos.slice();if(todoFilter==='mine')L=L.filter(t=>t.w
  return `<div class="seg">${[['all','All'],['mine','Mine']].map(([k,l])=>`<button data-tf="${k}" class="${todoFilter===k?'on':''}">${l}</button>`).join('')}</div>`+
  (L.map(t=>`<div class="card row ${t.done?'done':''}"><button class="chk n ${t.done?'on':''}" data-done="${t.id}"></button><div data-edit="${t.id}"><div class="tt">${t.fixId?'🔧 ':''}${esc(t.title)}</div><div class="sub">${t.who==='both'?'Both':nm(t.who)} ${dueTxt(t.due)}${t.done?' · done by '+nm(t.doneBy):''}</div></div></div>`).join('')||'<p class="sub">No to-dos yet. Tap ＋ Add.</p>')}
 function itemStock(i){return+(i.qty||0)}
-function vPantry(){const L=S.items.slice().sort((a,b)=>a.name.localeCompare(b.name));
- return `<button class="s" id="scanBtn" style="width:100%;margin-top:6px">📷 Scan a receipt</button>`+
+function vPantry(){if(S.pantrySeg==='shop')return segP()+vShop();const L=S.items.slice().sort((a,b)=>a.name.localeCompare(b.name));
+ return segP()+`<button class="s" id="scanBtn" style="width:100%;margin-top:6px">📷 Scan a receipt</button>`+
  (L.map(i=>{const low=i.min&&itemStock(i)<=i.min,exp=i.exp&&i.exp<=today();
   return `<div class="card"><div class="row"><div data-item="${i.id}"><b>${esc(i.name)}</b><div class="sub">${+itemStock(i).toFixed(2)} ${esc(i.unit)} ${low?'<span class="pill hi">Low</span>':''}${i.exp?`<span class="pill ${exp?'hi':''}">exp ${i.exp.slice(5)}</span>`:''}</div></div>
   <button class="s n" data-use="${i.id}">Used</button><button class="s n" data-buy="${i.id}">Bought</button></div></div>`}).join('')||'<p class="sub">Pantry is empty. Scan a receipt or tap ＋ Add.</p>')}
@@ -156,9 +158,9 @@ function editTodo(t={}){sheet(`<h2>${t.id?'Edit':'New'} to-do</h2><label>What</l
  ()=>{if(!val('ft'))return false;save('todos',{id:t.id||uid(),title:val('ft'),who:$('#fw').value,due:$('#fd').value,done:t.done||false,at:t.at||Date.now()})});
  if(t.id)$('#tdel').onclick=()=>{del('todos',t.id);close()}}
 function editItem(i={}){sheet(`<h2>${i.id?'Edit':'New'} item</h2><label>Name</label><input id="fn" value="${esc(i.name)}"><div class="row"><div><label>In stock</label><input id="fq" type="number" inputmode="decimal" value="${i.qty??''}"></div><div><label>Unit</label><input id="fu" value="${esc(i.unit||'ea')}"></div></div>
- <div class="row"><div><label>Low at</label><input id="fm" type="number" inputmode="decimal" value="${i.min??''}"></div><div><label>Expires</label><input id="fe" type="date" value="${i.exp||''}"></div></div>
+ <label>Category</label><select id="fc">${CATS.map(c=>`<option ${(i.cat||guessCat(i.name||''))===c?'selected':''}>${c}</option>`).join('')}</select><div class="row"><div><label>Add to shopping list when at or below</label><input id="fm" type="number" inputmode="decimal" value="${i.min??''}"></div><div><label>Expires</label><input id="fe" type="date" value="${i.exp||''}"></div></div>
  ${i.id?`<button class="s" id="wst" style="margin-top:10px">🗑 Log wasted / expired</button> <button class="d" id="idel">Delete item</button>`:''}`,
- ()=>{if(!val('fn'))return false;save('items',{id:i.id||uid(),name:val('fn'),qty:+val('fq')||0,unit:val('fu')||'ea',min:+val('fm')||0,exp:$('#fe').value})});
+ ()=>{if(!val('fn'))return false;save('items',{id:i.id||uid(),cat:$('#fc').value,name:val('fn'),qty:+val('fq')||0,unit:val('fu')||'ea',min:+val('fm')||0,exp:$('#fe').value})});
  if(i.id){$('#idel').onclick=()=>{del('items',i.id);close()};$('#wst').onclick=()=>qtyLog(i,'wasted')}}
 function qtyLog(i,type){const L={used:'Used',bought:'Bought',wasted:'Wasted / expired'}[type];
  sheet(`<h2>${L}: ${esc(i.name)}</h2><label>Amount (${esc(i.unit)})</label><input id="lq" type="number" inputmode="decimal" value="1">${type==='bought'?'<label>Price paid ($)</label><input id="lp" type="number" inputmode="decimal"><label>New expiry (optional)</label><input id="le" type="date">':''}`,
@@ -194,7 +196,7 @@ function review(rows,txt){const opts=S.items.map(i=>`<option value="${i.id}">${e
  $('#radd').onclick=()=>{$('#radd').insertAdjacentHTML('beforebegin',row());wire()};
  $('#rok').onclick=async()=>{let n=0;for(const el of $('#rl').querySelectorAll('.rr')){const name=el.querySelector('.rn').value.trim();if(!name)continue;
    const q=+el.querySelector('.rq').value||1,u=el.querySelector('.ru').value||'ea',p=+el.querySelector('.rp').value||0,mid=el.querySelector('.rm').value;
-   let it=S.items.find(i=>i.id===mid);if(!it){it={id:uid(),name,qty:0,unit:u,min:0,exp:''};await save('items',it)}
+   let it=S.items.find(i=>i.id===mid);if(!it){it={id:uid(),name,qty:0,unit:u,min:1,exp:'',cat:guessCat(name)};await save('items',it)}
    await logQty(it,'bought',q,p);S.items=S.items.filter(i=>i.id!==it.id).concat({...it,qty:itemStock(it)+q});n++}
   if(n){await save('logs',{id:uid(),type:'scan',by:S.me,at:Date.now()});celebrate(P.scan+n*P.bought)}close()}}
 // ---------- bindings ----------
@@ -210,10 +212,119 @@ function bind(){const m=$('#main'),on=(sel,fn)=>m.querySelectorAll(sel).forEach(
  on('[data-fs]',e=>{const f=S.fixes.find(x=>x.id===e.dataset.fs);save('fixes',{...f,status:'prog'})});
  on('[data-fixed]',e=>markFixed(S.fixes.find(x=>x.id===e.dataset.fixed)));
  on('[data-fdel]',e=>{if(confirm('Delete this request?')){del('fixes',e.dataset.fdel);del('todos','fx'+e.dataset.fdel)}});
- on('#scanBtn',scan);on('#notif',()=>Notification.requestPermission().then(R));
+ on('#scanBtn',scan);bindExtra(on);on('#notif',()=>Notification.requestPermission().then(R));
  on('#saveN',()=>F.setDoc(dref('meta','settings'),{names:{oscar:val('n1')||'Oscar',wife:val('n2')||'Wife'}},{merge:true}));
  on('#so2',()=>A.signOut(auth))}
-$('#addBtn').onclick=()=>({todos:editTodo,pantry:editItem,fix:newFix})[S.tab]?.();
+$('#addBtn').onclick=()=>S.tab==='pantry'&&S.pantrySeg==='shop'?addShop():({todos:editTodo,pantry:editItem,fix:newFix})[S.tab]?.();
+// ===== extras =====
+const CATS=['Produce','Meat & Fish','Dairy & Eggs','Bakery','Pantry','Frozen','Drinks','Snacks','Household','Other'];
+const CK=[['Produce',/banana|apple|avocado|spinach|lettuce|tomato|onion|potato|berr|lime|lemon|pepper|carrot|fruit|veg|cilantro|garlic/i],['Meat & Fish',/chicken|beef|pork|steak|turkey|fish|salmon|shrimp|bacon|sausage|ground/i],['Dairy & Eggs',/milk|egg|cheese|yogurt|butter|cream/i],['Bakery',/bread|tortilla|bun|bagel|roll/i],['Frozen',/frozen|ice cream|pizza/i],['Drinks',/water|soda|juice|coffee|tea|beer|wine/i],['Snacks',/chip|cookie|cracker|candy|snack/i],['Household',/paper|towel|soap|detergent|trash|tissue|clean|foil/i]];
+const guessCat=n=>(CK.find(([c,r])=>r.test(n))||['Pantry'])[0];
+const addDays=(d,n)=>{const x=new Date(d+'T12:00');x.setDate(x.getDate()+n);return x.toLocaleDateString('en-CA')};
+const daysTo=d=>Math.round((new Date(d+'T12:00')-new Date(today()+'T12:00'))/864e5);
+const lowItems=()=>S.items.filter(i=>i.min&&itemStock(i)<=i.min);
+const segP=()=>`<div class="seg">${[['stock','In stock'],['shop',`Shopping list (${lowItems().length+S.shop.filter(x=>!x.done).length})`]].map(([k,l])=>`<button data-pseg="${k}" class="${S.pantrySeg===k?'on':''}">${l}</button>`).join('')}</div>`;
+function vShop(){const low=lowItems(),man=S.shop.filter(x=>!x.done);
+ return `<p class="sub">Items at or below their low level show up here automatically. Tap the circle when it's in the cart.</p>`+
+ low.map(i=>`<div class="card row"><button class="chk n" data-lowbuy="${i.id}"></button><div><b>${esc(i.name)}</b><div class="sub">Have ${+itemStock(i).toFixed(2)} ${esc(i.unit)} · auto</div></div></div>`).join('')+
+ man.map(x=>`<div class="card row"><button class="chk n" data-shopdone="${x.id}"></button><div><b>${esc(x.name)}</b><div class="sub">${x.note?esc(x.note):'added by '+esc(nm(x.by))}</div></div><button class="d n" data-shopdel="${x.id}">✕</button></div>`).join('')+
+ (!low.length&&!man.length?'<p class="sub">List is empty 🎉 Tap ＋ Add for anything extra.</p>':'')}
+function addShop(name='',note=''){sheet(`<h2>Add to shopping list</h2><label>Item</label><input id="sn" value="${esc(name)}">`,()=>{if(!val('sn'))return false;save('shop',{id:uid(),name:val('sn'),note,by:S.me,at:Date.now(),done:false})})}
+function shopBought(name,done){const it=S.items.find(i=>i.name.toLowerCase()===name.toLowerCase());
+ sheet(`<h2>Got it: ${esc(name)}</h2><p class="sub">Add to stock?</p><div class="row"><div><label>Amount</label><input id="lq" type="number" inputmode="decimal" value="1"></div><div><label>Price $ (optional)</label><input id="lp" type="number" inputmode="decimal"></div></div>`,
+ async()=>{let i=it;if(!i){i={id:uid(),name,qty:0,unit:'ea',min:1,exp:'',cat:guessCat(name)};await save('items',i)}const p=await logQty(i,'bought',+val('lq')||1,+val('lp')||0);done&&await done();celebrate(p)})}
+function quickUse(){if(!S.items.length){alert('Your pantry is empty. Scan a receipt or add an item first.');return}
+ sheet(`<h2>Log what you used</h2><label>Item</label><select id="qi">${S.items.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(i=>`<option value="${i.id}">${esc(i.name)} (${+itemStock(i).toFixed(2)} ${esc(i.unit)})</option>`).join('')}</select><label>Amount</label><input id="qq" type="number" inputmode="decimal" value="1"><label>What happened?</label><select id="qt"><option value="used">Used it</option><option value="wasted">Threw it out / expired</option></select>`,
+ async()=>{const i=S.items.find(x=>x.id===$('#qi').value),q=+val('qq');if(!i||!q)return false;const p=await logQty(i,$('#qt').value,q);if(p)celebrate(p)})}
+function maintDue(){return S.maint.map(m=>({...m,due:m.last?addDays(m.last,m.every):today()})).sort((a,b)=>a.due>b.due?1:-1)}
+function nextDates(){return S.dates.map(d=>{let n=d.date;if(d.yearly&&n){const t=today(),y=+t.slice(0,4);n=y+n.slice(4);if(n<t)n=(y+1)+n.slice(4)}return{...d,next:n,days:n?daysTo(n):null,yrs:d.yearly&&d.date?(+String(n).slice(0,4))-(+d.date.slice(0,4)):0}}).filter(d=>d.next).sort((a,b)=>a.days-b.days)}
+function vHome(){const st=stats(S.me),o=stats('oscar'),w=stats('wife'),t=today();
+ const dueT=S.todos.filter(x=>!x.done&&x.due&&x.due<=t&&(x.who===S.me||x.who==='both')).length,fx=S.fixes.filter(f=>f.status!=='fixed').length,sh=lowItems().length+S.shop.filter(x=>!x.done).length;
+ const md=maintDue().filter(m=>m.due<=addDays(t,7)),ch=S.chores.filter(c=>c.next<=t),nd=nextDates()[0],dinner=(S.meta.plan||{})[t],dm=dinner&&S.meals.find(m=>m.id===dinner);
+ const big=(a,i,l)=>`<button data-q="${a}" style="padding:18px 8px;font-size:17px;border-radius:16px"><div style="font-size:30px">${i}</div>${l}</button>`;
+ const line=(i,txt,go)=>`<div class="card row" data-go="${go}"><span class="n" style="font-size:22px">${i}</span><div>${txt}</div><span class="n sub">›</span></div>`;
+ return (localStorage.hintDone?'':`<div class="card" style="background:#fff7ec"><b>Welcome to Arpero Family 👋</b><div class="sub" style="margin:6px 0">Use the big buttons for the everyday stuff. Everything syncs between both phones. You both earn points: to-dos, fixes, chores, and using food before it goes bad. Budget, meals, chores, rewards, home care and date night are under More.</div><button class="s" id="hintX">Got it</button></div>`)+
+ `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0">${big('scan','🧾','Scan receipt')}${big('fix','📸','Fix It photo')}${big('todo','✅','Add to-do')}${big('use','🥄','Log used')}</div>
+ <div class="card row center" data-go="score"><div><div class="sub">${esc(nm('oscar'))}</div><div class="big">${o.wk}</div></div><div class="n">🏆<div class="sub">this week</div></div><div><div class="sub">${esc(nm('wife'))}</div><div class="big">${w.wk}</div></div></div>`+
+ (dueT?line('☑️',`<b>${dueT}</b> to-do${dueT>1?'s':''} due for you`,'t:todos'):'')+
+ (fx?line('🔧',`<b>${fx}</b> open Fix It request${fx>1?'s':''}`,'t:fix'):'')+
+ (ch.length?line('🧹',`Chore: <b>${esc(ch[0].name)}</b> (${esc(nm(ch[0].turn))})${ch.length>1?` + ${ch.length-1} more`:''}`,'chores'):'')+
+ (md.length?line('🛠️',`Home care: <b>${esc(md[0].name)}</b>${md.length>1?` + ${md.length-1} more`:''}`,'maint'):'')+
+ (sh?line('🛒',`<b>${sh}</b> on the shopping list`,'t:shop'):'')+
+ line('🍽️',dm?`Tonight: <b>${esc(dm.name)}</b>`:'No dinner planned tonight','meals')+
+ (nd?line('📅',`<b>${esc(nd.name)}</b> ${nd.days===0?'is today! 🎉':'in '+nd.days+' day'+(nd.days>1?'s':'')}`,'dates'):'')}
+const SUBS=[['budget','💵','Budget & waste'],['compare','📊','Bought vs used'],['meals','🍽️','Meal planner'],['chores','🧹','Chores'],['rewards','🎁','Rewards shop'],['maint','🛠️','Home care'],['dates','💑','Date night & dates'],['score','🏆','Scoreboard & settings']];
+function vMore(){return SUBS.map(([k,i,l])=>`<div class="card row" data-sub="${k}"><span class="n" style="font-size:24px">${i}</span><b>${l}</b><span class="n sub">›</span></div>`).join('')}
+function vBudget(){const now=new Date(),ms=+new Date(now.getFullYear(),now.getMonth(),1),b=+S.meta.budget||0;
+ const L=S.logs.filter(l=>l.at>=ms&&l.item),cat={};let spent=0,waste=0;
+ L.forEach(l=>{const i=S.items.find(x=>x.id===l.item);if(!i)return;const c=i.cat||guessCat(i.name);
+  if(l.type==='bought'){spent+=+l.price||0;cat[c]=(cat[c]||0)+(+l.price||0)}
+  if(l.type==='wasted'){const unit=unitCost(i);waste+=unit*(+l.qty||0)}});
+ const pct=b?Math.min(100,spent/b*100):0,dleft=new Date(now.getFullYear(),now.getMonth()+1,0).getDate()-now.getDate();
+ return `<div class="card"><div class="row"><div><div class="sub">${now.toLocaleString('en',{month:'long'})} spending</div><div class="big">$${spent.toFixed(0)}${b?` <span class="sub">of $${b}</span>`:''}</div></div><button class="s n" id="setB">${b?'Edit':'Set'} budget</button></div>
+ ${b?`<div class="bar" style="margin-top:8px"><i style="width:${pct}%;background:${pct>90?'var(--r)':pct>70?'var(--o)':'var(--teal)'}"></i></div><div class="sub">$${Math.max(0,b-spent).toFixed(0)} left · ${dleft} days to go</div>`:'<div class="sub">Set a monthly grocery budget to track it.</div>'}</div>
+ <div class="card"><div class="sub">Wasted / expired this month (est.)</div><div class="big" style="color:var(--r)">$${waste.toFixed(2)}</div><div class="sub">Log it with 🥄 Log used → "Threw it out".</div></div>
+ <h2>By category</h2>${Object.entries(cat).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<div class="card"><div class="row"><b>${c}</b><span class="n">$${v.toFixed(2)}</span></div><div class="bar"><i style="width:${spent?v/spent*100:0}%;background:var(--teal)"></i></div></div>`).join('')||'<p class="sub">No purchases this month yet. Scan a receipt to start.</p>'}
+ <p class="sub">Spending comes from receipt scans and "Bought" entries with a price.</p>`}
+function unitCost(i){const b=S.logs.filter(l=>l.item===i.id&&l.type==='bought'&&l.price&&l.qty);const q=b.reduce((a,l)=>a+ +l.qty,0);return q?b.reduce((a,l)=>a+ +l.price,0)/q:0}
+const has=n=>{n=n.toLowerCase();return S.items.find(i=>itemStock(i)>0&&(i.name.toLowerCase().includes(n)||n.includes(i.name.toLowerCase())))};
+function mealScore(m){let have=0,soon=0;const miss=[];(m.ings||[]).forEach(g=>{const i=has(g);if(i){have++;if(i.exp&&daysTo(i.exp)<=3)soon++}else miss.push(g)});return{have,soon,miss,score:have+soon*2-miss.length}}
+function vMeals(){const plan=S.meta.plan||{},days=[...Array(7)].map((_,k)=>addDays(today(),k));
+ const sug=S.meals.map(m=>({m,...mealScore(m)})).sort((a,b)=>b.score-a.score).slice(0,3);
+ return `<h2>This week's dinners</h2>${days.map(d=>{const m=S.meals.find(x=>x.id===plan[d]);return`<div class="card row"><div class="n" style="width:56px"><b>${new Date(d+'T12:00').toLocaleDateString('en',{weekday:'short'})}</b><div class="sub">${d.slice(5)}</div></div><select data-plan="${d}"><option value="">—</option>${S.meals.map(x=>`<option value="${x.id}" ${x.id===plan[d]?'selected':''}>${esc(x.name)}</option>`).join('')}</select>${m&&d===today()?`<button class="n" data-cook="${m.id}">Cooked</button>`:''}</div>`}).join('')}
+ <h2>Suggested from your pantry</h2>${sug.map(s=>`<div class="card"><b>${esc(s.m.name)}</b><div class="sub">Have ${s.have}/${(s.m.ings||[]).length}${s.soon?` · uses ${s.soon} expiring soon ⏰`:''}${s.miss.length?' · missing: '+s.miss.map(esc).join(', '):''}</div>${s.miss.length?`<button class="s" style="margin-top:6px" data-miss="${s.m.id}">Add missing to shopping list</button>`:''}</div>`).join('')||'<p class="sub">Save a few meals below and I\'ll suggest ones that use what you have.</p>'}
+ <h2>Saved meals</h2>${S.meals.map(m=>`<div class="card row" data-meal="${m.id}"><div><b>${esc(m.name)}</b><div class="sub">${(m.ings||[]).map(esc).join(', ')}</div></div><span class="n sub">›</span></div>`).join('')}<button class="s" id="newMeal" style="width:100%">＋ New meal</button>`}
+function editMeal(m={}){sheet(`<h2>${m.id?'Edit':'New'} meal</h2><label>Name</label><input id="mn" value="${esc(m.name)}" placeholder="Chicken tacos"><label>Ingredients (comma separated)</label><textarea id="mi" rows="3" placeholder="chicken, tortillas, avocado">${esc((m.ings||[]).join(', '))}</textarea>${m.id?'<button class="d" id="mdel">Delete</button>':''}`,
+ ()=>{if(!val('mn'))return false;save('meals',{id:m.id||uid(),name:val('mn'),ings:val('mi').split(',').map(x=>x.trim()).filter(Boolean)})});if(m.id)$('#mdel').onclick=()=>{del('meals',m.id);close()}}
+function vChores(){const t=today();return `<p class="sub">Chores repeat and take turns between you two. Done = points.</p>`+S.chores.slice().sort((a,b)=>a.next>b.next?1:-1).map(c=>`<div class="card row"><div data-chore="${c.id}"><b>${esc(c.name)}</b><div class="sub">${esc(nm(c.turn))}'s turn · every ${c.every} days · ${c.pts} pts ${c.next<=t?'<span class="pill hi">Due</span>':`<span class="pill">${c.next.slice(5)}</span>`}</div></div><button class="n" data-chdone="${c.id}">Done</button></div>`).join('')+`<button class="s" id="newChore" style="width:100%">＋ New chore</button>`}
+function editChore(c={}){sheet(`<h2>${c.id?'Edit':'New'} chore</h2><label>Chore</label><input id="cn" value="${esc(c.name)}" placeholder="Take out trash"><div class="row"><div><label>Every (days)</label><input id="ce" type="number" inputmode="numeric" value="${c.every||7}"></div><div><label>Points</label><input id="cp" type="number" inputmode="numeric" value="${c.pts||10}"></div></div><label>Whose turn first</label>${whoSel(c.turn||S.me).replace('<option value="both"','<option disabled value="both"')}${c.id?'<button class="d" id="cdel">Delete</button>':''}`,
+ ()=>{if(!val('cn'))return false;save('chores',{id:c.id||uid(),name:val('cn'),every:+val('ce')||7,pts:+val('cp')||10,turn:$('#fw').value==='both'?'oscar':$('#fw').value,next:c.next||today()})});if(c.id)$('#cdel').onclick=()=>{del('chores',c.id);close()}}
+function vRewards(){const st=stats(S.me);return `<div class="card center"><div class="sub">Your points to spend</div><div class="big">${st.bal}</div></div><p class="sub">Make up prizes together (back rub, pick the movie, sleep in…). Redeem with points.</p>`+
+ S.rewards.map(r=>`<div class="card row"><div><b>${esc(r.name)}</b><div class="sub">${r.cost} pts</div></div><button class="n" data-redeem="${r.id}" ${st.bal<r.cost?'disabled style="opacity:.4"':''}>Redeem</button><button class="d n" data-rdel="${r.id}">✕</button></div>`).join('')+`<button class="s" id="newReward" style="width:100%">＋ New prize</button>
+ <h2>Recently redeemed</h2>${S.logs.filter(l=>l.type==='redeem').sort((a,b)=>b.at-a.at).slice(0,8).map(l=>`<div class="sub">🎁 ${esc(nm(l.by))}: ${esc(l.name)} (−${l.cost}) · ${new Date(l.at).toLocaleDateString()}</div>`).join('')||'<p class="sub">None yet.</p>'}`}
+const MDEF=[['Replace AC filter',90],['Flush water heater',365],['Test smoke detectors',30],['Replace smoke detector batteries',365],['Check Powerwall & solar in Tesla app',30],['Inspect EV charger & cable',90],['Clean dryer vent',365],['Clean fridge coils',180]];
+function vMaint(){const L=maintDue();return (L.length?'':`<div class="card"><p>Start with the usual list? (AC filter, water heater, smoke detectors, Powerwall/solar, EV charger…)</p><button id="seedM">Add the usual list</button></div>`)+
+ L.map(m=>{const d=daysTo(m.due);return`<div class="card row"><div data-mt="${m.id}"><b>${esc(m.name)}</b><div class="sub">every ${m.every} days · ${m.last?'last '+m.last.slice(5):'never logged'} ${d<=0?'<span class="pill hi">Due</span>':d<=7?`<span class="pill md">in ${d}d</span>`:`<span class="pill">in ${d}d</span>`}</div></div><button class="n" data-mdone="${m.id}">Done</button></div>`}).join('')+`<button class="s" id="newMaint" style="width:100%">＋ New reminder</button>`}
+function editMaint(m={}){sheet(`<h2>${m.id?'Edit':'New'} home care reminder</h2><label>Task</label><input id="xn" value="${esc(m.name)}"><div class="row"><div><label>Every (days)</label><input id="xe" type="number" inputmode="numeric" value="${m.every||90}"></div><div><label>Last done</label><input id="xl" type="date" value="${m.last||''}"></div></div>${m.id?'<button class="d" id="xdel">Delete</button>':''}`,
+ ()=>{if(!val('xn'))return false;save('maint',{id:m.id||uid(),name:val('xn'),every:+val('xe')||90,last:$('#xl').value})});if(m.id)$('#xdel').onclick=()=>{del('maint',m.id);close()}}
+function vDates(){const nd=nextDates(),ideas=S.ideas.filter(i=>!i.done);
+ return `<h2>💑 Date night jar</h2><button id="pickIdea" style="width:100%;padding:16px;font-size:18px">🎲 Pick a date for us</button><div id="pick" class="center big" style="font-size:22px;min-height:34px;margin:10px 0"></div>
+ ${ideas.map(i=>`<div class="card row"><div>${esc(i.text)}</div><button class="s n" data-idone="${i.id}">Did it ✓</button><button class="d n" data-idel="${i.id}">✕</button></div>`).join('')}<button class="s" id="newIdea" style="width:100%">＋ Add a date idea</button>
+ <h2>📅 Important dates</h2>${S.dates.some(d=>/anniv/i.test(d.name))?'':`<div class="card"><p>Add your anniversary (married 2023)?</p><button id="addAnniv">Add anniversary</button></div>`}
+ ${nd.map(d=>`<div class="card row" data-dt="${d.id}"><div><b>${esc(d.name)}</b><div class="sub">${new Date(d.next+'T12:00').toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'})}${d.yrs>0&&/anniv/i.test(d.name)?' · '+d.yrs+' years 💍':''}</div></div><div class="n center"><div class="big" style="font-size:24px">${d.days}</div><div class="sub">days</div></div></div>`).join('')}<button class="s" id="newDate" style="width:100%">＋ Add a date (birthday, bill, anniversary)</button>`}
+function editDate(d={}){sheet(`<h2>${d.id?'Edit':'New'} date</h2><label>Name</label><input id="dn" value="${esc(d.name)}" placeholder="Wife's birthday"><label>Date</label><input id="dd" type="date" value="${d.date||''}"><label>Repeats</label><select id="dy"><option value="1" ${d.yearly!==false?'selected':''}>Every year</option><option value="0" ${d.yearly===false?'selected':''}>One time</option></select>${d.id?'<button class="d" id="ddel">Delete</button>':''}`,
+ ()=>{if(!val('dn')||!$('#dd').value)return false;save('dates',{id:d.id||uid(),name:val('dn'),date:$('#dd').value,yearly:$('#dy').value==='1'})});if(d.id)$('#ddel').onclick=()=>{del('dates',d.id);close()}}
+const VIEWS={budget:vBudget,compare:()=>vStats(),meals:vMeals,chores:vChores,rewards:vRewards,maint:vMaint,dates:vDates,score:()=>vGame()};
+const plog=(type,pts,extra={})=>save('logs',{id:uid(),type,pts,by:S.me,at:Date.now(),...extra});
+function bindExtra(on){
+ on('[data-sub]',e=>{S.tab='more';S.sub=e.dataset.sub||null;R();scrollTo(0,0)});
+ on('[data-go]',e=>{const g=e.dataset.go;if(g==='t:shop'){S.tab='pantry';S.pantrySeg='shop';S.sub=null}else if(g.startsWith('t:')){S.tab=g.slice(2);S.sub=null}else{S.tab='more';S.sub=g}R();scrollTo(0,0)});
+ on('[data-q]',e=>({scan,fix:newFix,todo:()=>editTodo(),use:quickUse})[e.dataset.q]());
+ on('#hintX',()=>{localStorage.hintDone=1;R()});
+ on('[data-pseg]',e=>{S.pantrySeg=e.dataset.pseg;R()});
+ on('[data-lowbuy]',e=>{const i=S.items.find(x=>x.id===e.dataset.lowbuy);shopBought(i.name)});
+ on('[data-shopdone]',e=>{const x=S.shop.find(y=>y.id===e.dataset.shopdone);shopBought(x.name,()=>del('shop',x.id))});
+ on('[data-shopdel]',e=>del('shop',e.dataset.shopdel));
+ on('#setB',()=>sheet(`<h2>Monthly grocery budget</h2><input id="bb" type="number" inputmode="decimal" value="${S.meta.budget||''}" placeholder="800">`,()=>F.setDoc(dref('meta','settings'),{budget:+val('bb')||0},{merge:true})));
+ m_on();function m_on(){$('#main').querySelectorAll('[data-plan]').forEach(s=>s.onchange=()=>F.setDoc(dref('meta','settings'),{plan:{[s.dataset.plan]:s.value}},{merge:true}))}
+ on('[data-cook]',async e=>{const m=S.meals.find(x=>x.id===e.dataset.cook);for(const g of m.ings||[]){const i=has(g);if(i)await logQty(i,'used',1)}await plog('cook',P.cook,{name:m.name});celebrate(P.cook)});
+ on('[data-miss]',async e=>{const m=S.meals.find(x=>x.id===e.dataset.miss);for(const g of mealScore(m).miss)if(!S.shop.some(x=>!x.done&&x.name.toLowerCase()===g.toLowerCase()))await save('shop',{id:uid(),name:g,note:'for '+m.name,by:S.me,at:Date.now(),done:false});alert('Added to the shopping list')});
+ on('[data-meal]',e=>editMeal(S.meals.find(x=>x.id===e.dataset.meal)));on('#newMeal',()=>editMeal());
+ on('[data-chore]',e=>editChore(S.chores.find(x=>x.id===e.dataset.chore)));on('#newChore',()=>editChore());
+ on('[data-chdone]',async e=>{const c=S.chores.find(x=>x.id===e.dataset.chdone);await save('chores',{...c,next:addDays(today(),c.every),turn:c.turn==='oscar'?'wife':'oscar'});await plog('chore',c.pts,{name:c.name});celebrate(c.pts)});
+ on('#newReward',()=>sheet(`<h2>New prize</h2><label>Prize</label><input id="rn" placeholder="Pick the movie"><label>Cost (points)</label><input id="rc" type="number" inputmode="numeric" value="100">`,()=>{if(!val('rn'))return false;save('rewards',{id:uid(),name:val('rn'),cost:+val('rc')||100})}));
+ on('[data-redeem]',async e=>{const r=S.rewards.find(x=>x.id===e.dataset.redeem);if(stats(S.me).bal<r.cost||!confirm(`Redeem "${r.name}" for ${r.cost} points?`))return;await plog('redeem',0,{name:r.name,cost:r.cost});celebrate('🎁')});
+ on('[data-rdel]',e=>del('rewards',e.dataset.rdel));
+ on('#seedM',async()=>{for(const [n,d] of MDEF)await save('maint',{id:uid(),name:n,every:d,last:''})});
+ on('[data-mt]',e=>editMaint(S.maint.find(x=>x.id===e.dataset.mt)));on('#newMaint',()=>editMaint());
+ on('[data-mdone]',async e=>{const m=S.maint.find(x=>x.id===e.dataset.mdone);await save('maint',{...m,last:today()});await plog('maint',P.maint,{name:m.name});celebrate(P.maint)});
+ on('#newIdea',()=>sheet(`<h2>Date idea</h2><input id="in" placeholder="Picnic at Cypress Creek park">`,()=>{if(!val('in'))return false;save('ideas',{id:uid(),text:val('in'),done:false})}));
+ on('[data-idone]',e=>save('ideas',{...S.ideas.find(x=>x.id===e.dataset.idone),done:true}));on('[data-idel]',e=>del('ideas',e.dataset.idel));
+ on('#pickIdea',()=>{const L=S.ideas.filter(i=>!i.done);if(!L.length){$('#pick').textContent='Add some ideas first 💡';return}let n=0;const t=setInterval(()=>{if(!$('#pick'))return clearInterval(t);$('#pick').textContent=L[Math.floor(Math.random()*L.length)].text;if(++n>12){clearInterval(t);celebrate('💑')}},90)});
+ on('#addAnniv',()=>editDate({name:'Our anniversary',yearly:true}));
+ on('[data-dt]',e=>editDate(S.dates.find(x=>x.id===e.dataset.dt)));on('#newDate',()=>editDate());
+}
+
 document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
 document.addEventListener('gesturestart',e=>e.preventDefault());
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
