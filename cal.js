@@ -31,7 +31,7 @@ export function initCal({db,F,me,el,app,names={oscar:'Oscar',wife:'Kerissa'},onC
  let tried=false;function maybeRefresh(){if(tried||!S.ics.url)return;tried=true;if(!S.work.at||Date.now()-S.work.at>6*36e5)refreshICS()}
  setInterval(()=>{tried=false;maybeRefresh()},30*6e4);
  function all(from,to){const L=[],inR=d=>d>=from&&d<=to;
-  S.events.forEach(e=>{if(inR(e.s.slice(0,10)))L.push({...e,lab:e.src==='shop'?(app==='shop'?e.title:`Oscar busy: Shop${e.title?' · '+e.title:''}`):e.title,c:e.src==='shop'?'#0f2d52':e.kind==='date'?'#e0457b':'#f26a1b'})});
+  S.events.forEach(e=>{if(inR(e.s.slice(0,10)))L.push({...e,lab:e.src==='shop'?(app==='shop'?e.title:`Oscar busy: Shop${e.title?' · '+e.title:''}`):e.title,c:e.color||(e.src==='shop'?'#0f2d52':e.kind==='date'?'#e0457b':e.kind==='baby'?'#7c5cff':'#f26a1b')})});
   (S.work.blocks||[]).forEach(b=>inR(b.s.slice(0,10))&&L.push({...b,lab:'Oscar at work',c:'#8a8f98',src:'work',ro:1}));
   S.chores.forEach(c=>c.next&&inR(c.next<from?from:c.next)&&L.push({s:c.next<from?from:c.next,allDay:true,lab:`🧹 ${c.name} (${nm(c.turn)})`,c:'#f26a1b',ro:1}));
   S.maint.forEach(m=>{const due=m.last?addD(m.last,m.every):from;inR(due<from?from:due)&&L.push({s:due<from?from:due,allDay:true,lab:'🛠️ '+m.name,c:'#f7a325',ro:1})});
@@ -59,7 +59,7 @@ export function initCal({db,F,me,el,app,names={oscar:'Oscar',wife:'Kerissa'},onC
  let bindSheet=()=>{};const close=()=>{S.sheet=null;render()};
  function edit(e={}){const isShop=app==='shop';
   S.sheet=`<div class="mod"><div><h2 style="margin:0 0 6px;color:#0f2d52">${e.id?'Edit':'New'} event</h2><label>What</label><input id="ct" value="${esc(e.title)}" placeholder="${isShop?'Pickup: walnut board':'Date night'}">
-  <label>Type</label><select id="ck">${(isShop?[['shop','Shop (build, pickup, order due)']]:[['date','Date night'],['chore','Chore / errand'],['family','Family']]).concat(isShop?[['family','Family']]:[]).map(([v,l])=>`<option value="${v}" ${(e.kind||(isShop?'shop':'family'))===v?'selected':''}>${l}</option>`).join('')}</select>
+  <label>Type</label><select id="ck">${(isShop?[['shop','Shop (build, pickup, order due)']]:[['date','Date night'],['chore','Chore / errand'],['family','Family'],['baby','Baby / doctor']]).concat(isShop?[['family','Family']]:[]).map(([v,l])=>`<option value="${v}" ${(e.kind||(isShop?'shop':'family'))===v?'selected':''}>${l}</option>`).join('')}</select>
   <div id="csug"></div><button class="s" id="cs" style="margin-top:10px;width:100%">✨ Suggest a free time</button>
   <div class="r"><div><label>Date</label><input id="cd" type="date" value="${e.s?e.s.slice(0,10):ymd(new Date())}"></div></div>
   <div class="r"><div><label>Start</label><input id="c1" type="time" value="${e.s&&e.s.includes('T')?e.s.slice(11):''}"></div><div><label>End</label><input id="c2" type="time" value="${e.e&&e.e.includes('T')?e.e.slice(11):''}"></div></div>

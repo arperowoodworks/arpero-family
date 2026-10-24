@@ -57,8 +57,8 @@ const isOn = k => (settings.nudge?.[k]?.on) !== false;
 const sent = { ...(state.sent || {}) };
 let sentCount = 0;
 
-async function push(who, msg) {
-  if (!isOn(who)) { log(`skip ${who} (nudges off)`); return false; }
+async function push(who, msg, own = false) {
+  if (!own && !isOn(who)) { log(`skip ${who} (nudges off)`); return false; }
   const mine = subs.filter(s => s.who === who && s.sub?.endpoint);
   if (!mine.length) { log(`skip ${who} (no phone subscribed)`); return false; }
   let ok = false;
@@ -92,6 +92,7 @@ for (const s of shouts.filter(s => (s.at || 0) > shoutAt).sort((a, b) => a.at - 
 
 // ---- daily nudge: max one per person per Chicago day, at/after their chosen time ----
 function nudgeFor(k) {
+  if (pulse.soon?.length) return { title: '⏰ Use soon', body: pulse.soon.join(', ') + ' — use or freeze today' };
   const left = (pulse.goal || 300) - (pulse.wk || 0);
   const mineChores = (pulse.chores || []).filter(c => c.turn === k);
   const teamChores = (pulse.chores || []).length;
@@ -111,6 +112,49 @@ for (const k of ['oscar', 'wife']) {
   if (!msg) continue;
   if (await push(k, { ...msg, go: 'home', tag: 'nudge' })) sent[k] = day;
 }
+
+// ---- dinner reminder: its own optional notification (settings.dinnerN[k] = {on, time}), max once a day ----
+const dsent = { ...(state.dsent || {}) }, bsent = { ...(state.bsent || {}) }, vsent = { ...(state.vsent || {}) };
+for (const k of ['oscar', 'wife']) {
+  const d = settings.dinnerN?.[k];
+  if (!d?.on || hm < (d.time || '16:00') || dsent[k] === day) continue;
+  const planned = pulse.dinnerDay === day && pulse.dinner;
+  if (await push(k, planned ? { title: '🍽️ Tonight: ' + pulse.dinner, body: 'Tap to see the recipe and what you need.', go: 'week', tag: 'dinner' }
+    : { title: "🍽️ What's for dinner?", body: 'Tap for 3 ideas from what you already have.', go: 'dinner', tag: 'dinner' }, true)) dsent[k] = day;
+}
+// ---- baby feeding / nap reminders: own toggles (settings.babyN[k] = {feed, h, nap, awake}), off by default ----
+if (hm >= '07:00' && hm <= '21:30') for (const k of ['oscar', 'wife']) {
+  const r = settings.babyN?.[k];
+  if (!r) continue;
+  bsent[k] = { ...(bsent[k] || {}) };
+  for (const b of pulse.babies || []) {
+    const hrs = t => Math.round((Date.now() - t) / 36e5 * 2) / 2;
+    if (r.feed && b.feed && !b.asleep && Date.now() - b.feed >= (r.h || 3) * 36e5 && bsent[k][b.id + ':f'] !== b.feed) {
+      if (await push(k, { title: `🍼 ${b.name}`, body: `About ${hrs(b.feed)} hours since the last feeding.`, go: 'baby', tag: 'baby-feed-' + b.id }, true)) bsent[k][b.id + ':f'] = b.feed;
+    }
+    if (r.nap && b.sleep && !b.asleep && Date.now() - b.sleep >= (r.awake || 2.5) * 36e5 && bsent[k][b.id + ':n'] !== b.sleep) {
+      if (await push(k, { title: `😴 ${b.name}`, body: `Awake about ${hrs(b.sleep)} hours. Nap time soon?`, go: 'baby', tag: 'baby-nap-' + b.id }, true)) bsent[k][b.id + ':n'] = b.sleep;
+    }
+  }
+}
+// ---- baby doctor visits / vaccines with remind:true: evening before (18:00+) and morning of (07:00+), both parents ----
+{
+  const tmr = (() => { const x = new Date(day + 'T12:00'); x.setDate(x.getDate() + 1); return x.toLocaleDateString('en-CA'); })();
+  const evs = (await store.col(`${BASE}/events`, ['title', 'kind', 's', 'remind', 'allDay'])).filter(e => e.kind === 'baby' && e.remind);
+  for (const e of evs) {
+    const d = String(e.s || '').slice(0, 10), t = String(e.s || '').slice(11, 16);
+    const tl = t ? new Date('2000-01-01T' + t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
+    let key = '', msg = null;
+    if (d === tmr && hm >= '18:00') { key = e.id + ':eve'; msg = { title: '🩺 Tomorrow' + (tl ? ' ' + tl : ''), body: e.title }; }
+    else if (d === day && hm >= '07:00' && (!t || hm < t)) { key = e.id + ':morn'; msg = { title: '🩺 Today' + (tl ? ' ' + tl : ''), body: e.title }; }
+    if (!msg || vsent[key]) continue;
+    let any = false;
+    for (const k of ['oscar', 'wife']) any = (await push(k, { ...msg, go: 'baby', tag: 'visit-' + e.id }, true)) || any;
+    vsent[key] = day;
+  }
+  for (const k of Object.keys(vsent)) if (vsent[k] < addD0(day, -30)) delete vsent[k];
+}
+function addD0(d, n) { const x = new Date(d + 'T12:00'); x.setDate(x.getDate() + n); return x.toLocaleDateString('en-CA'); }
 
 // ================= Arpero Shop (Oscar only) =================
 // Data: shops/{uid}/data/state {state: JSON}, shops/{uid}/data/notify {on, time, subs:{id:{sub}}}, shops/{uid}/data/pushstate (sender-owned)
@@ -158,5 +202,5 @@ for (const uid of await store.ids('shops')) {
   await store.set(`shops/${uid}/data/pushstate`, { summary: ps.summary || '', alerted, ranAt: Date.now() });
 }
 
-await store.set(`${BASE}/meta/pushstate`, { fixAt: newFixAt, shoutAt: newShoutAt, sent, ranAt: Date.now() });
+await store.set(`${BASE}/meta/pushstate`, { fixAt: newFixAt, shoutAt: newShoutAt, sent, dsent, bsent, vsent, ranAt: Date.now() });
 log(`done ${day} ${hm} ${TZ}: ${sentCount} sent, ${subs.length} phones${first ? ' (first run: old Fix Its/thanks skipped)' : ''}`);
