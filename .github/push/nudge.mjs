@@ -156,6 +156,53 @@ if (hm >= '07:00' && hm <= '21:30') for (const k of ['oscar', 'wife']) {
 }
 function addD0(d, n) { const x = new Date(d + 'T12:00'); x.setDate(x.getDate() + n); return x.toLocaleDateString('en-CA'); }
 
+// ---- bill reminders (settings.hb.billN[k] !== false): unpaid, non-autopay; 3 days before and on the due day, 08:00+ ----
+const bnsent = { ...(state.bnsent || {}) };
+if (settings.hb?.setup && hm >= '08:00') {
+  const ym = day.slice(0, 7), [yy, mo] = ym.split('-').map(Number), dim = new Date(yy, mo, 0).getDate(), in3 = addD0(day, 3);
+  const bills = await store.col(`${BASE}/bills`);
+  for (const b of bills) {
+    if (b.auto) continue;
+    for (const m of [ym, in3.slice(0, 7)]) {
+      const mm = +m.slice(5, 7);
+      if (b.freq === 'quarterly' && ((mm - (+b.start || 1)) % 3 + 3) % 3) continue;
+      if (b.freq === 'yearly' && mm !== (+b.start || 1)) continue;
+      const [y2, m2] = m.split('-').map(Number), date = m + '-' + String(Math.min(+b.due || 1, new Date(y2, m2, 0).getDate())).padStart(2, '0');
+      if ((b.paid || {})[m]) continue;
+      const which = date === day ? 'day' : date === in3 ? 'pre' : '';
+      const key = `${b.id}:${m}:${which}`;
+      if (!which || bnsent[key]) continue;
+      const amt = '$' + (+b.amt || 0).toLocaleString('en-US');
+      const msg = which === 'day' ? { title: `💵 ${b.name} is due today`, body: `${amt} · tap to mark it paid.` } : { title: `💵 ${b.name} due in 3 days`, body: `${amt} on ${new Date(date + 'T12:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.` };
+      for (const k of ['oscar', 'wife']) if ((settings.hb.billN || {})[k] !== false) await push(k, { ...msg, go: 'budget', tag: 'bill-' + b.id }, true);
+      bnsent[key] = day;
+    }
+  }
+  for (const k of Object.keys(bnsent)) if (bnsent[k] < addD0(day, -40)) delete bnsent[k];
+}
+// ---- personal budget (settings.pb[k] = {on, amt, n:{p75,p100,weekly}}): 75% / 100% once a month, weekly note Sundays 18:00+ ----
+const psent = { ...(state.psent || {}) };
+{
+  const ym = day.slice(0, 7);
+  let spend = null;
+  for (const k of ['oscar', 'wife']) {
+    const raw = settings.pb?.[k] || {}, on = raw.on ?? true, amt = +raw.amt || 0, n = { p75: true, p100: true, weekly: true, ...(raw.n || {}) };
+    if (!on || !amt) continue;
+    spend = spend || await store.col(`${BASE}/spend`, ['who', 'amt', 'ym', 'biz']);
+    const spent = spend.filter(x => x.who === k && x.ym === ym && !x.biz).reduce((a, x) => a + (+x.amt || 0), 0);
+    const pct = spent / amt * 100, left = amt - spent, $ = v => '$' + Math.round(v).toLocaleString('en-US');
+    const ps = psent[k] = psent[k]?.ym === ym ? { ...psent[k] } : { ym, wk: psent[k]?.wk };
+    if (hm >= '08:00' && hm <= '21:30') {
+      if (pct >= 100 && n.p100 && !ps.p100) { if (await push(k, { title: '💳 Budget reached', body: `You've used this month's ${$(amt)}. The wait list is a good friend till the 1st.`, go: 'spend', tag: 'pb' }, true)) ps.p100 = ps.p75 = 1; }
+      else if (pct >= 75 && pct < 100 && n.p75 && !ps.p75) { if (await push(k, { title: '💳 75% of your budget', body: `${$(left)} left this month. You're doing fine, just a heads-up.`, go: 'spend', tag: 'pb' }, true)) ps.p75 = 1; }
+    }
+    if (n.weekly && dow === 0 && hm >= '18:00' && ps.wk !== day) {
+      const [y, m, d] = day.split('-').map(Number), dl = new Date(y, m, 0).getDate() - d + 1, wk = Math.max(0, left) * Math.min(7, dl) / dl;
+      if (await push(k, { title: '💳 This week', body: `You have about ${$(wk)} to spend this week (${$(Math.max(0, left))} left this month).`, go: 'spend', tag: 'pb-week' }, true)) ps.wk = day;
+    }
+  }
+}
+
 // ================= Arpero Shop (Oscar only) =================
 // Data: shops/{uid}/data/state {state: JSON}, shops/{uid}/data/notify {on, time, subs:{id:{sub}}}, shops/{uid}/data/pushstate (sender-owned)
 const OSCAR = 'oskararpero@gmail.com';
@@ -202,5 +249,5 @@ for (const uid of await store.ids('shops')) {
   await store.set(`shops/${uid}/data/pushstate`, { summary: ps.summary || '', alerted, ranAt: Date.now() });
 }
 
-await store.set(`${BASE}/meta/pushstate`, { fixAt: newFixAt, shoutAt: newShoutAt, sent, dsent, bsent, vsent, ranAt: Date.now() });
+await store.set(`${BASE}/meta/pushstate`, { fixAt: newFixAt, shoutAt: newShoutAt, sent, dsent, bsent, vsent, psent, bnsent, ranAt: Date.now() });
 log(`done ${day} ${hm} ${TZ}: ${sentCount} sent, ${subs.length} phones${first ? ' (first run: old Fix Its/thanks skipped)' : ''}`);
