@@ -2,7 +2,7 @@
 // To add Oscar's wife: put her Gmail in the list below and Publish.
 function familyMember() {
   return request.auth != null && request.auth.token.email_verified == true
-    && request.auth.token.email.lower() in ['oskararpero@gmail.com' /*, 'wife@gmail.com' */];
+    && request.auth.token.email.lower() in ['oskararpero@gmail.com', 'kerissa.arpero@outlook.com'];
 }
 match /families/arpero/{doc=**} {
   allow read, write: if familyMember();

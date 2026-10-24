@@ -40,7 +40,16 @@ img.ph{width:100%;max-height:260px;object-fit:cover;border-radius:10px;margin-to
 .big{font-size:30px;font-weight:800}.center{text-align:center}
 #login{padding:14vh 24px;text-align:center}
 </style></head><body>
-<div id="login" hidden><img src="logo.png" alt="Arpero Family" style="width:220px"><p class="sub">Est. 2023 · Our home, our team</p><button id="gbtn">Sign in with Google</button><p id="lmsg" class="sub"></p></div>
+<div id="login" hidden><img src="logo.png" alt="Arpero Family" style="width:220px"><p class="sub">Est. 2023 · Our home, our team</p>
+<div id="lmain"><button id="gbtn" style="width:100%;max-width:320px">Sign in with Google</button><br><br><button id="ebtn" class="s" style="width:100%;max-width:320px">Sign in with email</button></div>
+<div id="lemail" hidden style="max-width:320px;margin:auto;text-align:left">
+ <label class="sub">Your email</label><input id="lem" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com">
+ <div id="lpwbox" hidden><label class="sub">Password</label><input id="lpw" type="password" autocomplete="current-password" placeholder="At least 6 characters"></div>
+ <br><button id="lsend" style="width:100%;margin-top:8px">Email me a sign-in link</button>
+ <p class="center sub"><a href="#" id="lpwmode">Use a password instead</a></p>
+ <div id="lpwbtns" hidden><button id="lpin" style="width:100%">Sign in</button><button id="lpup" class="s" style="width:100%;margin-top:8px">Create account</button><p class="center sub"><a href="#" id="lforgot">Forgot password?</a></p></div>
+ <p class="center sub"><a href="#" id="lback">← Back</a></p></div>
+<p id="lmsg" class="sub"></p></div>
 <div id="app" hidden>
 <header><img src="icon-180.png" alt="" style="width:40px;height:40px;border-radius:10px;margin-right:10px"><div style="flex:1"><h1 id="ttl">To-dos</h1><div class="sub" id="who"></div></div><button class="s n" id="addBtn">＋ Add</button></header>
 <main id="main"></main>
@@ -57,15 +66,36 @@ const OSCAR='oskararpero@gmail.com';
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 const today=()=>new Date().toLocaleDateString('en-CA'),uid=()=>Math.random().toString(36).slice(2,10);
 const col=n=>F.collection(db,'families','arpero',n),dref=(n,id)=>F.doc(db,'families','arpero',n,id);
-const S={todos:[],items:[],logs:[],fixes:[],meta:{names:{oscar:'Oscar',wife:'Wife'}},tab:'home',sub:null,pantrySeg:'stock',meals:[],chores:[],rewards:[],maint:[],ideas:[],dates:[],shop:[],me:null,cmp:'week',seenFix:+localStorage.seenFix||0};
-const who=e=>e===OSCAR?'oscar':'wife',nm=k=>S.meta.names?.[k]||({oscar:'Oscar',wife:'Wife'})[k]||k;
+const S={todos:[],items:[],logs:[],fixes:[],meta:{names:{oscar:'Oscar',wife:'Kerissa'}},tab:'home',sub:null,pantrySeg:'stock',meals:[],chores:[],rewards:[],maint:[],ideas:[],dates:[],shop:[],me:null,cmp:'week',seenFix:+localStorage.seenFix||0};
+const who=e=>(e||'').toLowerCase()===OSCAR?'oscar':'wife',nm=k=>{const v=S.meta.names?.[k];return (v&&v!=='Wife'?v:0)||({oscar:'Oscar',wife:'Kerissa'})[k]||k};
 const save=(n,o)=>F.setDoc(dref(n,o.id),o,{merge:true}),del=(n,id)=>F.deleteDoc(dref(n,id));
 const prov=()=>{const p=new A.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});return p};
 $('#gbtn').onclick=async()=>{try{await A.signInWithPopup(auth,prov())}catch(e){if(['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/web-storage-unsupported'].includes(e.code))return A.signInWithRedirect(auth,prov());$('#lmsg').textContent=e.message}};
+
+// ---------- email sign-in (link + password fallback) ----------
+const APPURL='https://arperowoodworks.github.io/arpero-family/';
+const isPWA=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+const msg=t=>$('#lmsg').innerHTML=t,em=()=>$('#lem').value.trim().toLowerCase();
+const errTxt=e=>({'auth/invalid-email':'That email doesn\'t look right.','auth/invalid-credential':'Wrong email or password.','auth/wrong-password':'Wrong email or password.','auth/user-not-found':'No account yet. Tap "Create account".','auth/email-already-in-use':'You already have an account. Tap "Sign in", or use the email link.','auth/weak-password':'Use at least 6 characters.','auth/operation-not-allowed':'This sign-in option isn\'t turned on yet.','auth/too-many-requests':'Too many tries. Wait a minute and try again.','auth/invalid-action-code':'This link was already used or expired. Request a new one.'})[e.code]||e.message;
+let pwMode=false;const setPw=v=>{pwMode=v;$('#lpwbox').hidden=!v;$('#lpwbtns').hidden=!v;$('#lsend').hidden=v;$('#lpwmode').textContent=v?'Email me a link instead':'Use a password instead';msg('')};
+$('#ebtn').onclick=()=>{$('#lmain').hidden=true;$('#lemail').hidden=false;$('#lem').value=localStorage.emailForSignIn||'';msg('');$('#lem').focus()};
+$('#lback').onclick=e=>{e.preventDefault();$('#lmain').hidden=false;$('#lemail').hidden=true;setPw(false)};
+$('#lpwmode').onclick=e=>{e.preventDefault();setPw(!pwMode)};
+$('#lsend').onclick=async()=>{const e=em();if(!e)return msg('Type your email first.');try{await A.sendSignInLinkToEmail(auth,e,{url:APPURL,handleCodeInApp:true});localStorage.emailForSignIn=e;msg('📬 Check your email ('+esc(e)+') and tap the sign-in link.'+(isPWA?'<br>It will open in Safari. After that, come back to this app and use "Use a password instead" if you\'re not signed in here.':''))}catch(x){msg(errTxt(x))}};
+$('#lpin').onclick=async()=>{try{await A.signInWithEmailAndPassword(auth,em(),$('#lpw').value)}catch(x){msg(errTxt(x))}};
+$('#lpup').onclick=async()=>{try{const c=await A.createUserWithEmailAndPassword(auth,em(),$('#lpw').value);if(!c.user.emailVerified){await A.sendEmailVerification(c.user,{url:APPURL});msg('Account created! We sent a quick confirmation email. Tap the link in it, then come back and sign in.');await A.signOut(auth)}}catch(x){msg(errTxt(x))}};
+$('#lforgot').onclick=async e=>{e.preventDefault();const a=em();if(!a)return msg('Type your email first, then tap "Forgot password?".');try{await A.sendPasswordResetEmail(auth,a,{url:APPURL});msg('📬 Password reset email sent to '+esc(a)+'.')}catch(x){msg(errTxt(x))}};
+let linkNote=false;
+if(A.isSignInWithEmailLink(auth,location.href)){let e=localStorage.emailForSignIn;if(!e)e=(prompt('Please confirm your email to finish signing in')||'').trim().toLowerCase();
+ if(e){try{await A.signInWithEmailLink(auth,e,location.href);localStorage.removeItem('emailForSignIn');linkNote=!isPWA}catch(x){msg(errTxt(x))}}
+ history.replaceState(null,'',location.pathname)}
+function afterLinkSheet(){if(!linkNote)return;linkNote=false;const u=auth.currentUser;
+ sheet(`<h2>You're signed in! 🎉</h2><p>Next time, just tap the <b>Arpero Family</b> icon on your home screen.</p><p class="sub">If the home-screen app asks you to sign in again, create a password below, then in the app tap <b>Sign in with email → Use a password instead</b>.</p><label>New password (optional)</label><input id="npw" type="password" autocomplete="new-password" placeholder="At least 6 characters"><button id="npwb" style="width:100%;margin-top:10px">Save password</button><p id="npwm" class="sub"></p>`);
+  $('#npwb').onclick=async()=>{try{await A.updatePassword(u,$('#npw').value);$('#npwm').textContent='✅ Password saved. Use it in the home-screen app.'}catch(x){$('#npwm').textContent=errTxt(x)}}}
 let unsubs=[];
 A.onAuthStateChanged(auth,u=>{unsubs.forEach(f=>f());unsubs=[];
  if(!u){$('#login').hidden=false;$('#app').hidden=true;return}
- S.me=who(u.email);$('#login').hidden=true;$('#app').hidden=false;
+ S.me=who(u.email);$('#login').hidden=true;$('#app').hidden=false;setTimeout(afterLinkSheet,300);
  for(const n of ['todos','items','logs','fixes','meals','chores','rewards','maint','ideas','dates','shop'])unsubs.push(F.onSnapshot(col(n),s=>{S[n]=s.docs.map(d=>d.data());if(n==='fixes')notifyFix();R()},err=>denied(err)));
  unsubs.push(F.onSnapshot(dref('meta','settings'),s=>{if(s.exists())S.meta=s.data();R()},()=>{}));
 });
@@ -213,7 +243,7 @@ function bind(){const m=$('#main'),on=(sel,fn)=>m.querySelectorAll(sel).forEach(
  on('[data-fixed]',e=>markFixed(S.fixes.find(x=>x.id===e.dataset.fixed)));
  on('[data-fdel]',e=>{if(confirm('Delete this request?')){del('fixes',e.dataset.fdel);del('todos','fx'+e.dataset.fdel)}});
  on('#scanBtn',scan);bindExtra(on);on('#notif',()=>Notification.requestPermission().then(R));
- on('#saveN',()=>F.setDoc(dref('meta','settings'),{names:{oscar:val('n1')||'Oscar',wife:val('n2')||'Wife'}},{merge:true}));
+ on('#saveN',()=>F.setDoc(dref('meta','settings'),{names:{oscar:val('n1')||'Oscar',wife:val('n2')||'Kerissa'}},{merge:true}));
  on('#so2',()=>A.signOut(auth))}
 $('#addBtn').onclick=()=>S.tab==='pantry'&&S.pantrySeg==='shop'?addShop():({todos:editTodo,pantry:editItem,fix:newFix})[S.tab]?.();
 // ===== extras =====
@@ -292,7 +322,7 @@ function vDates(){const nd=nextDates(),ideas=S.ideas.filter(i=>!i.done);
  ${ideas.map(i=>`<div class="card row"><div>${esc(i.text)}</div><button class="s n" data-idone="${i.id}">Did it ✓</button><button class="d n" data-idel="${i.id}">✕</button></div>`).join('')}<button class="s" id="newIdea" style="width:100%">＋ Add a date idea</button>
  <h2>📅 Important dates</h2>${S.dates.some(d=>/anniv/i.test(d.name))?'':`<div class="card"><p>Add your anniversary (married 2023)?</p><button id="addAnniv">Add anniversary</button></div>`}
  ${nd.map(d=>`<div class="card row" data-dt="${d.id}"><div><b>${esc(d.name)}</b><div class="sub">${new Date(d.next+'T12:00').toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'})}${d.yrs>0&&/anniv/i.test(d.name)?' · '+d.yrs+' years 💍':''}</div></div><div class="n center"><div class="big" style="font-size:24px">${d.days}</div><div class="sub">days</div></div></div>`).join('')}<button class="s" id="newDate" style="width:100%">＋ Add a date (birthday, bill, anniversary)</button>`}
-function editDate(d={}){sheet(`<h2>${d.id?'Edit':'New'} date</h2><label>Name</label><input id="dn" value="${esc(d.name)}" placeholder="Wife's birthday"><label>Date</label><input id="dd" type="date" value="${d.date||''}"><label>Repeats</label><select id="dy"><option value="1" ${d.yearly!==false?'selected':''}>Every year</option><option value="0" ${d.yearly===false?'selected':''}>One time</option></select>${d.id?'<button class="d" id="ddel">Delete</button>':''}`,
+function editDate(d={}){sheet(`<h2>${d.id?'Edit':'New'} date</h2><label>Name</label><input id="dn" value="${esc(d.name)}" placeholder="Kerissa's birthday"><label>Date</label><input id="dd" type="date" value="${d.date||''}"><label>Repeats</label><select id="dy"><option value="1" ${d.yearly!==false?'selected':''}>Every year</option><option value="0" ${d.yearly===false?'selected':''}>One time</option></select>${d.id?'<button class="d" id="ddel">Delete</button>':''}`,
  ()=>{if(!val('dn')||!$('#dd').value)return false;save('dates',{id:d.id||uid(),name:val('dn'),date:$('#dd').value,yearly:$('#dy').value==='1'})});if(d.id)$('#ddel').onclick=()=>{del('dates',d.id);close()}}
 const VIEWS={budget:vBudget,compare:()=>vStats(),meals:vMeals,chores:vChores,rewards:vRewards,maint:vMaint,dates:vDates,score:()=>vGame()};
 const plog=(type,pts,extra={})=>save('logs',{id:uid(),type,pts,by:S.me,at:Date.now(),...extra});
