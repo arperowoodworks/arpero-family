@@ -114,15 +114,15 @@ function events(){const ev=[];
  S.fixes.forEach(f=>{ev.push({who:f.by,pts:P.fixReq,at:f.at,k:'fixreq'});if(f.status==='fixed')ev.push({who:f.fixedBy||'oscar',pts:P.fix,at:f.fixedAt,k:'fix'})});
  return ev.filter(e=>e.who&&e.at)}
 const weekStart=d=>{const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-x.getDay());return x};
-function stats(k){const ev=events().filter(e=>e.who===k),tot=ev.reduce((a,e)=>a+e.pts,0),ws=+weekStart(Date.now());
+function stats(k){const ev=events().filter(e=>!k||e.who===k),tot=ev.reduce((a,e)=>a+e.pts,0),ws=+weekStart(Date.now());
  const wk=ev.filter(e=>e.at>=ws).reduce((a,e)=>a+e.pts,0);
  const days=new Set(ev.map(e=>new Date(e.at).toLocaleDateString('en-CA')));let st=0,d=new Date();
  if(!days.has(d.toLocaleDateString('en-CA')))d.setDate(d.getDate()-1);
  while(days.has(d.toLocaleDateString('en-CA'))){st++;d.setDate(d.getDate()-1)}
  const lvl=Math.floor(Math.sqrt(tot/50))+1,cnt=x=>ev.filter(e=>e.k===x).length;
- const B=[['🌱','First points',tot>0],['✅','10 to-dos',cnt('todo')>=10],['🧾','Receipt scanner',cnt('scan')>=1],['🥕','Waste warrior (10 saves)',cnt('saved')>=10],
-  ['🔧','Fixer (5 fixes)',cnt('fix')>=5],['🔥','7-day streak',st>=7],['🏆','Level 5',lvl>=5],['💯','500 points',tot>=500]];
- const spent=S.logs.filter(l=>l.type==='redeem'&&l.by===k).reduce((a,l)=>a+(+l.cost||0),0);
+ const B=[['🌱','First team points',tot>0],['✅','25 to-dos together',cnt('todo')>=25],['🧾','First receipt scanned',cnt('scan')>=1],['🥕','Saved 10 foods from waste',cnt('saved')>=10],
+  ['🔧','5 fixes done',cnt('fix')>=5],['🧹','10 chores done',cnt('chore')>=10],['🍽️','Cooked 5 planned meals',cnt('cook')>=5],['🔥','7-day team streak',st>=7],['🏡','Team level 5',lvl>=5],['💯','1,000 team points',tot>=1000]];
+ const spent=S.logs.filter(l=>l.type==='redeem').reduce((a,l)=>a+(+l.cost||0),0);
  return{tot,wk,st,lvl,next:50*lvl*lvl,B,bal:tot-spent}}
 function celebrate(p){const e=document.createElement('div');e.className='pop';e.textContent=typeof p==='number'?'+'+p+' pts':p;document.body.append(e);setTimeout(()=>e.remove(),1200);
  for(let i=0;i<24;i++){const c=document.createElement('i');c.className='conf';c.style.left=Math.random()*100+'vw';c.style.background=['#0f2d52','#f26a1b','#b8321f','#1f6fa8','#f7a325'][i%5];c.style.animationDelay=Math.random()*.3+'s';document.body.append(c);setTimeout(()=>c.remove(),2100)}
@@ -140,7 +140,7 @@ function R(){
  $('#nav').innerHTML=TABS.map(([k,i,l])=>`<button class="${S.tab===k?'on':''}" data-t="${k}"><b>${i}</b>${l}${k==='fix'&&openFix?`<span class="badge">${openFix}</span>`:''}</button>`).join('');
  $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.t;S.sub=null;if(S.tab==='fix'){S.seenFix=Date.now();localStorage.seenFix=S.seenFix}R();scrollTo(0,0)});
  $('#ttl').textContent=S.sub?SUBS.find(x=>x[0]===S.sub)[2]:TABS.find(t=>t[0]===S.tab)[2];
- const st=stats(S.me);$('#who').textContent=`${nm(S.me)} · Lv ${st.lvl} · ${st.tot} pts · 🔥${st.st}`;
+ const st=stats();$('#who').textContent=`Hi ${nm(S.me)} · Team Lv ${st.lvl} · 🔥${st.st}`;
  $('#addBtn').hidden=!['todos','pantry','fix'].includes(S.tab);
  $('#main').innerHTML=S.sub?(S.sub!=='more'?'<button class="s" data-sub="" style="margin:4px 0">‹ More</button>':'')+VIEWS[S.sub]():({home:vHome,todos:vTodos,pantry:vPantry,fix:vFix,more:vMore})[S.tab]();
  bind()}
@@ -173,14 +173,30 @@ function vStats(){const now=new Date(),start=S.cmp==='week'?weekStart(now):new D
  <div class="sub">Bought ${+r.b.toFixed(2)} · Used ${+r.u.toFixed(2)} · Wasted ${+r.w.toFixed(2)} ${esc(r.i.unit)}</div>
  <div class="bar" style="margin-top:6px"><i style="width:${r.u/m*100}%;background:var(--g)"></i><i style="width:${r.w/m*100}%;background:var(--r)"></i><i style="width:${Math.max(0,r.b-r.u-r.w)/m*100}%;background:#cfd8d3"></i></div></div>`}).join('')||'<p class="sub">No purchases or usage logged in this period yet.</p>'}
  <p class="sub">🟩 used · 🟥 wasted/expired · ⬜ still left</p>`}
-function vGame(){const o=stats('oscar'),w=stats('wife'),lead=o.wk===w.wk?'Tied this week!':(o.wk>w.wk?nm('oscar'):nm('wife'))+' leads this week';
- const card=(k,s)=>`<div class="card"><div class="row"><b>${esc(nm(k))}</b><span class="n pill lo">Lv ${s.lvl}</span></div>
- <div class="row center" style="margin:8px 0"><div><div class="big">${s.wk}</div><div class="sub">this week</div></div><div><div class="big">${s.tot}</div><div class="sub">total</div></div><div><div class="big">🔥${s.st}</div><div class="sub">day streak</div></div></div>
- <div class="bar"><i style="width:${Math.min(100,s.tot/s.next*100)}%;background:var(--o)"></i></div><div class="sub">${s.next-s.tot} pts to level ${s.lvl+1}</div>
- <div style="margin-top:8px">${s.B.map(([i,l,on])=>`<span class="pill" style="opacity:${on?1:.3}" title="${l}">${i} ${l}</span>`).join(' ')}</div></div>`;
- return `<div class="card center"><div class="sub">Weekly scoreboard</div><div class="big">${o.wk} – ${w.wk}</div><div>${esc(lead)} 🏆</div></div>${card('oscar',o)}${card('wife',w)}
- <div class="card sub">Points: to-do ${P.todo} · fix ${P.fix} · fix request ${P.fixReq} · log usage ${P.used} (+${P.beforeExp} if used before it expires) · log purchase ${P.bought} · receipt scan ${P.scan}. Week resets Sunday.</div>
- <div class="card"><label class="sub">Names</label><div class="row"><input id="n1" value="${esc(nm('oscar'))}"><input id="n2" value="${esc(nm('wife'))}"><button class="n" id="saveN">Save</button></div>
+const goal=()=>+S.meta.goal||300;
+function goalCard(){const t=stats(),g=goal(),p=Math.min(100,t.wk/g*100);
+ return `<div class="card" data-go="score"><div class="row"><b>Team goal: ${g} pts this week</b><span class="n sub">${t.wk>=g?'🎉 Done!':''}</span></div>
+ <div class="bar" style="height:14px;margin:8px 0"><i style="width:${p}%;background:linear-gradient(90deg,var(--teal),var(--o))"></i></div>
+ <div class="sub">${t.wk} pts so far${t.wk<g?` · ${g-t.wk} to go together`:' · nice work, team!'}</div></div>`}
+function recap(){const ws=+weekStart(Date.now()),ev=events().filter(e=>e.at>=ws),c=k=>ev.filter(e=>e.k===k).length;
+ const now=new Date(),ms=+new Date(now.getFullYear(),now.getMonth(),1),b=+S.meta.budget||0;
+ const spent=S.logs.filter(l=>l.type==='bought'&&l.at>=ms).reduce((a,l)=>a+(+l.price||0),0);
+ const L=[[c('todo'),'to-dos done','✅'],[c('fix'),'things fixed','🔧'],[c('saved')+c('used'),'foods used up','🥕'],[c('chore'),'chores done','🧹'],[c('cook'),'home-cooked dinners','🍽️'],[c('maint'),'home care tasks','🛠️']].filter(x=>x[0]);
+ const thanks=['oscar','wife'].map(k=>{const e=ev.filter(x=>x.who===k),bits=[];const n=x=>e.filter(y=>y.k===x).length;
+  if(n('fix'))bits.push(`fixed ${n('fix')} thing${n('fix')>1?'s':''}`);if(n('todo'))bits.push(`finished ${n('todo')} to-do${n('todo')>1?'s':''}`);
+  const items=S.logs.filter(l=>l.type==='bought'&&l.by===k&&l.at>=ws).length;if(items)bits.push(`added ${items} item${items>1?'s':''}`);
+  if(n('chore'))bits.push(`did ${n('chore')} chore${n('chore')>1?'s':''}`);if(n('cook'))bits.push(`cooked dinner`);if(n('fixreq'))bits.push(`spotted ${n('fixreq')} fix${n('fixreq')>1?'es':''}`);
+  return bits.length?`💛 Thanks ${esc(nm(k))}: ${bits.join(', ')}`:''}).filter(Boolean);
+ return `<div class="card"><b>This week we…</b>${L.length?L.map(x=>`<div style="margin-top:6px">${x[2]} ${x[0]} ${x[0]===1?x[1].replace(/^(\S+?)s\b/,'$1').replace('dinners','dinner').replace('tasks','task').replace('foods','food'):x[1]}</div>`).join(''):'<div class="sub" style="margin-top:6px">Just getting started. Every little thing counts!</div>'}
+ ${b?`<div style="margin-top:6px">💵 ${spent<=b?`$${(b-spent).toFixed(0)} under budget this month`:`$${(spent-b).toFixed(0)} over budget this month`}</div>`:''}
+ ${thanks.length?`<div class="sub" style="margin-top:10px">${thanks.join('<br>')}</div>`:''}</div>`}
+function vGame(){const t=stats();
+ return goalCard()+`<div class="card"><div class="row center"><div><div class="big">${t.tot}</div><div class="sub">team points</div></div><div><div class="big">Lv ${t.lvl}</div><div class="sub">team level</div></div><div><div class="big">🔥${t.st}</div><div class="sub">day streak</div></div></div>
+ <div class="bar" style="margin-top:8px"><i style="width:${Math.min(100,t.tot/t.next*100)}%;background:var(--o)"></i></div><div class="sub">${t.next-t.tot} pts to team level ${t.lvl+1}</div></div>`+recap()+
+ `<h2>Team badges</h2><div class="card">${t.B.map(([i,l,on])=>`<span class="pill" style="opacity:${on?1:.3};margin:3px 2px">${i} ${l}</span>`).join(' ')}</div>
+ <div class="card sub">Everything you both do adds to one team total: to-do ${P.todo} · fix ${P.fix} · spotting a fix ${P.fixReq} · using food ${P.used} (+${P.beforeExp} before it expires) · purchase ${P.bought} · receipt scan ${P.scan} · chores & home care too. Spend team points together in the Rewards shop.</div>
+ <div class="card"><label class="sub">Weekly team goal (points)</label><div class="row"><input id="tg" type="number" inputmode="numeric" value="${goal()}"><button class="n" id="saveG">Save</button></div>
+ <label class="sub" style="margin-top:10px;display:block">Names</label><div class="row"><input id="n1" value="${esc(nm('oscar'))}"><input id="n2" value="${esc(nm('wife'))}"><button class="n" id="saveN">Save</button></div>
  <p class="sub">Signed in as ${esc(auth.currentUser?.email)} · <a href="#" id="so2">Sign out</a></p></div>`}
 // ---------- sheets ----------
 function sheet(html,onSave){$('#sheet').innerHTML=`<div class="sheet"><div>${html}<div class="row" style="margin-top:14px"><button class="s" id="shX">Cancel</button>${onSave?'<button id="shOk">Save</button>':''}</div></div></div>`;
@@ -271,14 +287,14 @@ function quickUse(){if(!S.items.length){alert('Your pantry is empty. Scan a rece
  async()=>{const i=S.items.find(x=>x.id===$('#qi').value),q=+val('qq');if(!i||!q)return false;const p=await logQty(i,$('#qt').value,q);if(p)celebrate(p)})}
 function maintDue(){return S.maint.map(m=>({...m,due:m.last?addDays(m.last,m.every):today()})).sort((a,b)=>a.due>b.due?1:-1)}
 function nextDates(){return S.dates.map(d=>{let n=d.date;if(d.yearly&&n){const t=today(),y=+t.slice(0,4);n=y+n.slice(4);if(n<t)n=(y+1)+n.slice(4)}return{...d,next:n,days:n?daysTo(n):null,yrs:d.yearly&&d.date?(+String(n).slice(0,4))-(+d.date.slice(0,4)):0}}).filter(d=>d.next).sort((a,b)=>a.days-b.days)}
-function vHome(){const st=stats(S.me),o=stats('oscar'),w=stats('wife'),t=today();
+function vHome(){const t=today();
  const dueT=S.todos.filter(x=>!x.done&&x.due&&x.due<=t&&(x.who===S.me||x.who==='both')).length,fx=S.fixes.filter(f=>f.status!=='fixed').length,sh=lowItems().length+S.shop.filter(x=>!x.done).length;
  const md=maintDue().filter(m=>m.due<=addDays(t,7)),ch=S.chores.filter(c=>c.next<=t),nd=nextDates()[0],dinner=(S.meta.plan||{})[t],dm=dinner&&S.meals.find(m=>m.id===dinner);
  const big=(a,i,l)=>`<button data-q="${a}" style="padding:18px 8px;font-size:17px;border-radius:16px"><div style="font-size:30px">${i}</div>${l}</button>`;
  const line=(i,txt,go)=>`<div class="card row" data-go="${go}"><span class="n" style="font-size:22px">${i}</span><div>${txt}</div><span class="n sub">›</span></div>`;
- return (localStorage.hintDone?'':`<div class="card" style="background:#fff7ec"><b>Welcome to Arpero Family 👋</b><div class="sub" style="margin:6px 0">Use the big buttons for the everyday stuff. Everything syncs between both phones. You both earn points: to-dos, fixes, chores, and using food before it goes bad. Budget, meals, chores, rewards, home care and date night are under More.</div><button class="s" id="hintX">Got it</button></div>`)+
+ return (localStorage.hintDone?'':`<div class="card" style="background:#fff7ec"><b>Welcome to Arpero Family 👋</b><div class="sub" style="margin:6px 0">Use the big buttons for the everyday stuff. Everything syncs between both phones. Everything you both do adds to one team score: to-dos, fixes, chores, and using food before it goes bad. Budget, meals, chores, rewards, home care and date night are under More.</div><button class="s" id="hintX">Got it</button></div>`)+
  `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0">${big('scan','🧾','Scan receipt')}${big('fix','📸','Fix It photo')}${big('todo','✅','Add to-do')}${big('use','🥄','Log used')}</div>
- <div class="card row center" data-go="score"><div><div class="sub">${esc(nm('oscar'))}</div><div class="big">${o.wk}</div></div><div class="n">🏆<div class="sub">this week</div></div><div><div class="sub">${esc(nm('wife'))}</div><div class="big">${w.wk}</div></div></div>`+
+ ${goalCard()}`+
  (dueT?line('☑️',`<b>${dueT}</b> to-do${dueT>1?'s':''} due for you`,'t:todos'):'')+
  (fx?line('🔧',`<b>${fx}</b> open Fix It request${fx>1?'s':''}`,'t:fix'):'')+
  (ch.length?line('🧹',`Chore: <b>${esc(ch[0].name)}</b> (${esc(nm(ch[0].turn))})${ch.length>1?` + ${ch.length-1} more`:''}`,'chores'):'')+
@@ -286,7 +302,7 @@ function vHome(){const st=stats(S.me),o=stats('oscar'),w=stats('wife'),t=today()
  (sh?line('🛒',`<b>${sh}</b> on the shopping list`,'t:shop'):'')+
  line('🍽️',dm?`Tonight: <b>${esc(dm.name)}</b>`:'No dinner planned tonight','meals')+
  (nd?line('📅',`<b>${esc(nd.name)}</b> ${nd.days===0?'is today! 🎉':'in '+nd.days+' day'+(nd.days>1?'s':'')}`,'dates'):'')}
-const SUBS=[['budget','💵','Budget & waste'],['compare','📊','Bought vs used'],['meals','🍽️','Meal planner'],['chores','🧹','Chores'],['rewards','🎁','Rewards shop'],['maint','🛠️','Home care'],['dates','💑','Date night & dates'],['score','🏆','Scoreboard & settings']];
+const SUBS=[['budget','💵','Budget & waste'],['compare','📊','Bought vs used'],['meals','🍽️','Meal planner'],['chores','🧹','Chores'],['rewards','🎁','Rewards shop'],['maint','🛠️','Home care'],['dates','💑','Date night & dates'],['score','🏡','Team & settings']];
 function vMore(){return SUBS.map(([k,i,l])=>`<div class="card row" data-sub="${k}"><span class="n" style="font-size:24px">${i}</span><b>${l}</b><span class="n sub">›</span></div>`).join('')}
 function vBudget(){const now=new Date(),ms=+new Date(now.getFullYear(),now.getMonth(),1),b=+S.meta.budget||0;
  const L=S.logs.filter(l=>l.at>=ms&&l.item),cat={};let spent=0,waste=0;
@@ -312,9 +328,9 @@ function editMeal(m={}){sheet(`<h2>${m.id?'Edit':'New'} meal</h2><label>Name</la
 function vChores(){const t=today();return `<p class="sub">Chores repeat and take turns between you two. Done = points.</p>`+S.chores.slice().sort((a,b)=>a.next>b.next?1:-1).map(c=>`<div class="card row"><div data-chore="${c.id}"><b>${esc(c.name)}</b><div class="sub">${esc(nm(c.turn))}'s turn · every ${c.every} days · ${c.pts} pts ${c.next<=t?'<span class="pill hi">Due</span>':`<span class="pill">${c.next.slice(5)}</span>`}</div></div><button class="n" data-chdone="${c.id}">Done</button></div>`).join('')+`<button class="s" id="newChore" style="width:100%">＋ New chore</button>`}
 function editChore(c={}){sheet(`<h2>${c.id?'Edit':'New'} chore</h2><label>Chore</label><input id="cn" value="${esc(c.name)}" placeholder="Take out trash"><div class="row"><div><label>Every (days)</label><input id="ce" type="number" inputmode="numeric" value="${c.every||7}"></div><div><label>Points</label><input id="cp" type="number" inputmode="numeric" value="${c.pts||10}"></div></div><label>Whose turn first</label>${whoSel(c.turn||S.me).replace('<option value="both"','<option disabled value="both"')}${c.id?'<button class="d" id="cdel">Delete</button>':''}`,
  ()=>{if(!val('cn'))return false;save('chores',{id:c.id||uid(),name:val('cn'),every:+val('ce')||7,pts:+val('cp')||10,turn:$('#fw').value==='both'?'oscar':$('#fw').value,next:c.next||today()})});if(c.id)$('#cdel').onclick=()=>{del('chores',c.id);close()}}
-function vRewards(){const st=stats(S.me);return `<div class="card center"><div class="sub">Your points to spend</div><div class="big">${st.bal}</div></div><p class="sub">Make up prizes together (back rub, pick the movie, sleep in…). Redeem with points.</p>`+
- S.rewards.map(r=>`<div class="card row"><div><b>${esc(r.name)}</b><div class="sub">${r.cost} pts</div></div><button class="n" data-redeem="${r.id}" ${st.bal<r.cost?'disabled style="opacity:.4"':''}>Redeem</button><button class="d n" data-rdel="${r.id}">✕</button></div>`).join('')+`<button class="s" id="newReward" style="width:100%">＋ New prize</button>
- <h2>Recently redeemed</h2>${S.logs.filter(l=>l.type==='redeem').sort((a,b)=>b.at-a.at).slice(0,8).map(l=>`<div class="sub">🎁 ${esc(nm(l.by))}: ${esc(l.name)} (−${l.cost}) · ${new Date(l.at).toLocaleDateString()}</div>`).join('')||'<p class="sub">None yet.</p>'}`}
+function vRewards(){const st=stats();return `<div class="card center"><div class="sub">Team points to spend</div><div class="big">${st.bal}</div></div><p class="sub">Shared treats you unlock together. Pick them as a team.</p>`+(S.rewards.length?'':`<div class="card"><p>Start with a few ideas? Movie night, takeout night, date night…</p><button id="seedR">Add starter rewards</button></div>`)+
+ S.rewards.map(r=>`<div class="card row"><div><b>${esc(r.name)}</b><div class="sub">${r.cost} pts</div></div><button class="n" data-redeem="${r.id}" ${st.bal<r.cost?'disabled style="opacity:.4"':''}>${st.bal<r.cost?'🔒 '+(r.cost-st.bal)+' to go':'Unlock'}</button><button class="d n" data-rdel="${r.id}">✕</button></div>`).join('')+`<button class="s" id="newReward" style="width:100%">＋ New prize</button>
+ <h2>Recently redeemed</h2>${S.logs.filter(l=>l.type==='redeem').sort((a,b)=>b.at-a.at).slice(0,8).map(l=>`<div class="sub">🎁 ${esc(l.name)} (−${l.cost}) · ${new Date(l.at).toLocaleDateString()}</div>`).join('')||'<p class="sub">None yet.</p>'}`}
 const MDEF=[['Replace AC filter',90],['Flush water heater',365],['Test smoke detectors',30],['Replace smoke detector batteries',365],['Check Powerwall & solar in Tesla app',30],['Inspect EV charger & cable',90],['Clean dryer vent',365],['Clean fridge coils',180]];
 function vMaint(){const L=maintDue();return (L.length?'':`<div class="card"><p>Start with the usual list? (AC filter, water heater, smoke detectors, Powerwall/solar, EV charger…)</p><button id="seedM">Add the usual list</button></div>`)+
  L.map(m=>{const d=daysTo(m.due);return`<div class="card row"><div data-mt="${m.id}"><b>${esc(m.name)}</b><div class="sub">every ${m.every} days · ${m.last?'last '+m.last.slice(5):'never logged'} ${d<=0?'<span class="pill hi">Due</span>':d<=7?`<span class="pill md">in ${d}d</span>`:`<span class="pill">in ${d}d</span>`}</div></div><button class="n" data-mdone="${m.id}">Done</button></div>`}).join('')+`<button class="s" id="newMaint" style="width:100%">＋ New reminder</button>`}
@@ -346,7 +362,9 @@ function bindExtra(on){
  on('[data-chore]',e=>editChore(S.chores.find(x=>x.id===e.dataset.chore)));on('#newChore',()=>editChore());
  on('[data-chdone]',async e=>{const c=S.chores.find(x=>x.id===e.dataset.chdone);await save('chores',{...c,next:addDays(today(),c.every),turn:c.turn==='oscar'?'wife':'oscar'});await plog('chore',c.pts,{name:c.name});celebrate(c.pts)});
  on('#newReward',()=>sheet(`<h2>New prize</h2><label>Prize</label><input id="rn" placeholder="Pick the movie"><label>Cost (points)</label><input id="rc" type="number" inputmode="numeric" value="100">`,()=>{if(!val('rn'))return false;save('rewards',{id:uid(),name:val('rn'),cost:+val('rc')||100})}));
- on('[data-redeem]',async e=>{const r=S.rewards.find(x=>x.id===e.dataset.redeem);if(stats(S.me).bal<r.cost||!confirm(`Redeem "${r.name}" for ${r.cost} points?`))return;await plog('redeem',0,{name:r.name,cost:r.cost});celebrate('🎁')});
+ on('[data-redeem]',async e=>{const r=S.rewards.find(x=>x.id===e.dataset.redeem);if(stats().bal<r.cost||!confirm(`Unlock "${r.name}" for ${r.cost} team points?`))return;await plog('redeem',0,{name:r.name,cost:r.cost});celebrate('🎁')});
+ on('#seedR',async()=>{for(const [n,c] of [['🍿 Movie night',150],['🥡 Takeout night',300],['🍦 Ice cream run',100],['💑 Date night out',500],['😴 Sleep-in Saturday',250]])await save('rewards',{id:uid(),name:n,cost:c})});
+ on('#saveG',()=>F.setDoc(dref('meta','settings'),{goal:+val('tg')||300},{merge:true}));
  on('[data-rdel]',e=>del('rewards',e.dataset.rdel));
  on('#seedM',async()=>{for(const [n,d] of MDEF)await save('maint',{id:uid(),name:n,every:d,last:''})});
  on('[data-mt]',e=>editMaint(S.maint.find(x=>x.id===e.dataset.mt)));on('#newMaint',()=>editMaint());

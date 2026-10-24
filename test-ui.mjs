@@ -23,7 +23,7 @@ await p.evaluate(()=>document.querySelector('nav button[data-t=more]').click());
 for(const s of ['budget','meals','chores','rewards','maint','dates','score','compare']){await p.evaluate(s=>{const e=document.querySelector(`[data-sub="${s}"]`)||document.querySelector('[data-sub=""]');e.click()},s);
  if(s==='maint')await click('#seedM');if(s==='meals'){await click('#newMeal');await type('#mn','Milk cereal');await type('#mi','milk, cereal');await click('#shOk')}
  if(s==='chores'){await click('#newChore');await type('#cn','Take out trash');await click('#shOk');await click('[data-chdone]')}
- if(s==='rewards'){await click('#newReward');await type('#rn','Pick the movie');await type('#rc','20');await click('#shOk')}
+ if(s==='rewards'){await click('#seedR');await new Promise(r=>setTimeout(r,200));await click('#newReward');await type('#rn','Pick the movie');await type('#rc','20');await click('#shOk')}
  if(s==='dates'){await click('#newIdea');await type('#in','Picnic');await click('#shOk');await click('#pickIdea')}
  await shot('7-'+s);await p.evaluate(()=>document.querySelector('nav button[data-t=more]').click())}
 await p.evaluate(()=>document.querySelector('nav button[data-t=home]').click());await shot('8-home-after');
