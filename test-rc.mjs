@@ -1,0 +1,11 @@
+import puppeteer from 'puppeteer-core';
+const b=await puppeteer.launch({executablePath:'/usr/bin/google-chrome',headless:'new',args:['--no-sandbox']});const p=await b.newPage();await p.setViewport({width:375,height:667});
+const errs=[];p.on('pageerror',e=>errs.push(e.message));const W=ms=>new Promise(r=>setTimeout(r,ms));
+await p.goto('http://127.0.0.1:8833/?go=budget',{waitUntil:'networkidle0'});await p.evaluate(()=>localStorage.removeItem('__D'));
+await p.evaluate(async()=>{const m=await import('./test-mock/firebase-firestore.js');await m.setDoc({c:'families/arpero/meta',id:'settings'},{hb:{setup:true,income:[],limits:{groceries:600}}})});await p.reload({waitUntil:'networkidle0'});await W(800);
+const T='WALMART\nGV WHL MLK GAL 3.48 N\nBNLS SKNLS CHKN BRST 2.1 lb @ 3.47/lb 7.29 N\nBAN 1.24 N\nSUBTOTAL 12.01\nTAX 0.20\nTOTAL 12.21\n';
+await p.evaluate(t=>window.__rv(t),T);await W(500);
+await p.evaluate(()=>{const r=document.querySelector('.rr .rn');r.value='Whole milk'});await p.$eval('#rok',e=>e.click());await W(800);
+await p.evaluate(t=>window.__rv(t),T);await W(500);console.log('2nd scan names',await p.$$eval('.rr .rn',x=>x.map(e=>e.value)),await p.$$eval('.rr .sub',x=>x.map(e=>e.innerText)));
+const D=await p.evaluate(()=>window.__D);console.log(JSON.stringify(Object.values(D['families/arpero/spend']||{}).map(x=>[x.cat,x.amt,x.store])),JSON.stringify(Object.values(D['families/arpero/items']).map(i=>[i.name,i.qty,i.unit,i.ucost,i.store])));
+await p.$eval('#shX',e=>e.click());await W(500);console.log(await p.evaluate(()=>[...document.querySelectorAll('.card')].find(e=>/Food this month/.test(e.innerText))?.innerText.replace(/\s+/g,' ')));console.log(errs);await b.close();

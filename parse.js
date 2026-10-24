@@ -21,10 +21,15 @@ function parseReceipt(text){
       const u=name.match(/\b(\d+(?:\.\d+)?)\s*(lb|lbs|oz|ct|pk|gal|kg|dz|doz)\b/i);if(u&&!q){unit=UNITS[u[2].toLowerCase()]}}
     name=name.replace(/^\d{4,}\s*/,'').replace(/\s\d{5,}\b/g,'').replace(/[^A-Za-z0-9&%' .\/-]/g,' ').replace(/\s+/g,' ').trim();
     if(name.replace(/[^A-Za-z]/g,'').length<2)continue;
-    out.push({name:titleCase(name),qty,unit,price});
+    out.push({name:expandAbbr(name),raw:name.toUpperCase(),qty,unit,price});
   }
   return out;
 }
-g.parseReceipt=parseReceipt;
-if(typeof module!=='undefined')module.exports={parseReceipt};
+// Aldi / Walmart style abbreviations -> friendly words (word by word; the app also remembers your own fixes)
+const ABBR={GV:'Great Value',MM:"Member's Mark",SS:'Simply Nature',BNLS:'Boneless',SKNLS:'Skinless',BRST:'Breast',BRSTS:'Breasts',CHKN:'Chicken',CHK:'Chicken',CKN:'Chicken',GRD:'Ground',GRND:'Ground',BF:'Beef',BEEF:'Beef',TRKY:'Turkey',PRK:'Pork',SSG:'Sausage',SAUS:'Sausage',BCN:'Bacon',WHL:'Whole',MLK:'Milk',MILK:'Milk',WHT:'White',WHEAT:'Wheat',WHTBRD:'White Bread',BRD:'Bread',CHS:'Cheese',CHSE:'Cheese',SHRD:'Shredded',SHR:'Shredded',MOZZ:'Mozzarella',CHED:'Cheddar',SHRP:'Sharp',CRM:'Cream',SR:'Sour',BTR:'Butter',BUTR:'Butter',YGRT:'Yogurt',YOG:'Yogurt',EGG:'Eggs',EGGS:'Eggs',LG:'Large',XL:'Extra Large',ORG:'Organic',ORGNC:'Organic',BAN:'Bananas',BANANA:'Bananas',BANANAS:'Bananas',APPL:'Apples',APL:'Apple',STRWB:'Strawberries',STRAWB:'Strawberries',BLUEB:'Blueberries',AVO:'Avocado',AVOC:'Avocados',TOM:'Tomatoes',TMT:'Tomatoes',TOMS:'Tomatoes',ONN:'Onion',ONI:'Onion',ONION:'Onions',YEL:'Yellow',GRN:'Green',RD:'Red',PEPR:'Pepper',PPR:'Pepper',POT:'Potatoes',POTS:'Potatoes',RUSS:'Russet',LTC:'Lettuce',LETT:'Lettuce',ROM:'Romaine',CARR:'Carrots',CRT:'Carrots',CUC:'Cucumber',CILNTR:'Cilantro',CIL:'Cilantro',LMN:'Lemon',LIM:'Lime',GRLC:'Garlic',GAR:'Garlic',RCE:'Rice',RICE:'Rice',BRN:'Brown',PSTA:'Pasta',SPAG:'Spaghetti',SCE:'Sauce',SAU:'Sauce',TORT:'Tortillas',TRTLA:'Tortillas',FLR:'Flour',SGR:'Sugar',OIL:'Oil',VEG:'Vegetable',OLV:'Olive',BNS:'Beans',BN:'Bean',BLK:'Black',PNTO:'Pinto',CRN:'Corn',FRZ:'Frozen',FZN:'Frozen',PZZA:'Pizza',PIZ:'Pizza',CRL:'Cereal',CER:'Cereal',OJ:'Orange Juice',JCE:'Juice',JUI:'Juice',WTR:'Water',SPKL:'Sparkling',SDA:'Soda',COFF:'Coffee',CFE:'Coffee',CHIP:'Chips',CHPS:'Chips',CRKR:'Crackers',CKY:'Cookies',CKIE:'Cookies',SNK:'Snack',PB:'Peanut Butter',PNT:'Peanut',JLY:'Jelly',DIAP:'Diapers',DIAPR:'Diapers',WIPE:'Wipes',WPS:'Wipes',TP:'Toilet Paper',BATH:'Bath',TSSU:'Tissue',PPR_TWL:'Paper Towels',TWL:'Towels',DET:'Detergent',LNDRY:'Laundry',DSH:'Dish',SOAP:'Soap',FAM:'Family',PK:'Pack',CT:'ct',OZ:'oz',LB:'lb',GAL:'Gallon',HG:'Half Gallon',FF:'Fat Free',RF:'Reduced Fat',DZ:'Dozen'};
+function expandAbbr(n){return String(n).replace(/[A-Za-z%]+/g,w=>{const k=w.toUpperCase();return ABBR[k]||(/^\d/.test(w)?w:w.charAt(0).toUpperCase()+w.slice(1).toLowerCase())}).replace(/\s+/g,' ').trim()}
+function parseTotal(text){let t=0;for(const raw of String(text).split(/\r?\n/)){const l=clean(raw).replace(/(\d),(\d{2})\b/g,'$1.$2');if(/sub\s*-?total/i.test(l))continue;const m=l.match(/\b(?:total|balance due|amount due)\b[^\d]*(\d{1,4}\.\d{2})/i);if(m)t=Math.max(t,parseFloat(m[1]))}return t}
+function detectStore(text){const s=String(text);return /walmart|wal-mart|great value/i.test(s)?'Walmart':/\baldi\b/i.test(s)?'Aldi':''}
+g.parseReceipt=parseReceipt;g.parseTotal=parseTotal;g.detectStore=detectStore;g.expandAbbr=expandAbbr;
+if(typeof module!=='undefined')module.exports={parseReceipt,parseTotal,detectStore,expandAbbr};
 })(typeof window!=='undefined'?window:globalThis);
