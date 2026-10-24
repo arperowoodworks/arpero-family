@@ -1,0 +1,13 @@
+import {initializeTestEnvironment,assertSucceeds,assertFails} from '@firebase/rules-unit-testing';
+import {doc,setDoc,getDoc} from 'firebase/firestore';import fs from 'fs';
+const env=await initializeTestEnvironment({projectId:'arpero-shop',firestore:{rules:fs.readFileSync('test.rules','utf8'),host:'127.0.0.1',port:8085}});
+const ctx=(e,v=true)=>env.authenticatedContext('u'+e.length,{email:e,email_verified:v}).firestore();
+const t=async(n,p)=>{try{await p;console.log('PASS',n)}catch(e){console.log('FAIL',n,e.message)}};
+await t('oscar write',assertSucceeds(setDoc(doc(ctx('oskararpero@gmail.com'),'families/arpero/todos/a'),{x:1})));
+await t('oscar read',assertSucceeds(getDoc(doc(ctx('OskarArpero@gmail.com'),'families/arpero/todos/a'))));
+await t('stranger read denied',assertFails(getDoc(doc(ctx('evil@gmail.com'),'families/arpero/todos/a'))));
+await t('stranger write denied',assertFails(setDoc(doc(ctx('evil@gmail.com'),'families/arpero/fixes/b'),{x:1})));
+await t('arperowoodworks denied',assertFails(getDoc(doc(ctx('arperowoodworks@gmail.com'),'families/arpero/items/a'))));
+await t('unverified oscar denied',assertFails(getDoc(doc(ctx('oskararpero@gmail.com',false),'families/arpero/todos/a'))));
+await t('signed-out denied',assertFails(getDoc(doc(env.unauthenticatedContext().firestore(),'families/arpero/todos/a'))));
+await env.cleanup();

@@ -1,0 +1,220 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Arpero Family"><meta name="theme-color" content="#0f2d52">
+<link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" href="favicon-32.png">
+<title>Arpero Family</title>
+<style>
+:root{--g:#0f2d52;--bg:#f5f7fa;--teal:#1f6fa8;--gold:#f7a325;--c:#fff;--t:#1f2421;--m:#6b7069;--r:#b8321f;--o:#f26a1b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--t);font:16px -apple-system,system-ui,sans-serif;touch-action:manipulation}
+input,select,textarea,button{font-size:16px;font-family:inherit}
+input,select,textarea{width:100%;padding:10px;border:1px solid #d6d3cb;border-radius:10px;background:#fff}
+button{border:0;border-radius:10px;padding:10px 14px;background:var(--g);color:#fff;font-weight:600}
+button.s{background:#e7e4dc;color:var(--t)}button.d{background:none;color:var(--r);padding:6px}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env(safe-area-inset-top) + 8px) 16px 8px;display:flex;justify-content:space-between;align-items:center}
+h1{font-size:20px;margin:0}h2{font-size:17px;margin:16px 0 8px}
+.sub{color:var(--m);font-size:13px}
+main{padding:0 14px calc(90px + env(safe-area-inset-bottom))}
+.card{background:var(--c);border-radius:14px;padding:12px;margin:8px 0;box-shadow:0 1px 3px #0001}
+.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}.row>.n{flex:0 0 auto}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;border-top:1px solid #e5e2da;padding-bottom:env(safe-area-inset-bottom);z-index:6}
+nav button{flex:1;background:none;color:var(--m);padding:8px 0 6px;font-size:12px;font-weight:500;position:relative}
+nav button b{display:block;font-size:22px}nav button.on{color:var(--teal)}
+.badge{position:absolute;top:2px;right:22%;background:var(--r);color:#fff;border-radius:9px;font-size:11px;padding:1px 6px}
+.chk{width:28px;height:28px;border-radius:50%;border:2px solid var(--g);background:#fff;flex:0 0 28px;padding:0}
+.chk.on{background:var(--g)}.done .tt{text-decoration:line-through;color:var(--m)}
+.pill{display:inline-block;padding:2px 8px;border-radius:9px;font-size:12px;background:#eee;margin-right:4px}
+.hi{background:#fde2e0;color:var(--r)}.md{background:#fdf0d9;color:var(--o)}.lo{background:#e1eef8;color:var(--teal)}
+.seg{display:flex;background:#e7e4dc;border-radius:10px;padding:3px;margin:8px 0}.seg button{flex:1;background:none;color:var(--t);padding:7px}.seg button.on{background:#fff}
+.bar{height:10px;border-radius:5px;background:#eee;overflow:hidden;display:flex}.bar i{display:block;height:100%}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px 4px;text-align:left;border-bottom:1px solid #eee}
+img.ph{width:100%;max-height:260px;object-fit:cover;border-radius:10px;margin-top:8px}
+.sheet{position:fixed;inset:0;background:#0006;z-index:20;display:flex;align-items:flex-end}
+.sheet>div{background:var(--bg);width:100%;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+.sheet label{display:block;margin:10px 0 4px;font-size:14px;color:var(--m)}
+.pop{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font-size:28px;font-weight:800;color:var(--g);z-index:30;pointer-events:none;animation:pop 1.1s ease-out forwards}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}25%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-140%) scale(1)}}
+.conf{position:fixed;top:-10px;width:8px;height:12px;z-index:29;animation:fall 1.6s linear forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(720deg)}}
+.big{font-size:30px;font-weight:800}.center{text-align:center}
+#login{padding:14vh 24px;text-align:center}
+</style></head><body>
+<div id="login" hidden><img src="logo.png" alt="Arpero Family" style="width:220px"><p class="sub">Est. 2023 · Our home, our team</p><button id="gbtn">Sign in with Google</button><p id="lmsg" class="sub"></p></div>
+<div id="app" hidden>
+<header><img src="icon-180.png" alt="" style="width:40px;height:40px;border-radius:10px;margin-right:10px"><div style="flex:1"><h1 id="ttl">To-dos</h1><div class="sub" id="who"></div></div><button class="s n" id="addBtn">＋ Add</button></header>
+<main id="main"></main>
+<nav id="nav"></nav></div>
+<div id="sheet"></div>
+<script src="parse.js"></script>
+<script type="module">
+const V='https://www.gstatic.com/firebasejs/11.10.0/';
+const [{initializeApp},A,F]=await Promise.all([import(V+'firebase-app.js'),import(V+'firebase-auth.js'),import(V+'firebase-firestore.js')]);
+const fb=initializeApp({apiKey:"AIzaSyCBmD2yN0DkDWkGBR9RDS4ApqVs13pSGC4",authDomain:"arpero-shop.firebaseapp.com",projectId:"arpero-shop",storageBucket:"arpero-shop.firebasestorage.app",messagingSenderId:"404661227591"},'family');
+const auth=A.getAuth(fb);await A.setPersistence(auth,A.browserLocalPersistence);
+const db=F.initializeFirestore(fb,{localCache:F.persistentLocalCache()});
+const OSCAR='oskararpero@gmail.com';
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+const today=()=>new Date().toLocaleDateString('en-CA'),uid=()=>Math.random().toString(36).slice(2,10);
+const col=n=>F.collection(db,'families','arpero',n),dref=(n,id)=>F.doc(db,'families','arpero',n,id);
+const S={todos:[],items:[],logs:[],fixes:[],meta:{names:{oscar:'Oscar',wife:'Wife'}},tab:'todos',me:null,cmp:'week',seenFix:+localStorage.seenFix||0};
+const who=e=>e===OSCAR?'oscar':'wife',nm=k=>S.meta.names?.[k]||k;
+const save=(n,o)=>F.setDoc(dref(n,o.id),o,{merge:true}),del=(n,id)=>F.deleteDoc(dref(n,id));
+const prov=()=>{const p=new A.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});return p};
+$('#gbtn').onclick=async()=>{try{await A.signInWithPopup(auth,prov())}catch(e){if(['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/web-storage-unsupported'].includes(e.code))return A.signInWithRedirect(auth,prov());$('#lmsg').textContent=e.message}};
+let unsubs=[];
+A.onAuthStateChanged(auth,u=>{unsubs.forEach(f=>f());unsubs=[];
+ if(!u){$('#login').hidden=false;$('#app').hidden=true;return}
+ S.me=who(u.email);$('#login').hidden=true;$('#app').hidden=false;
+ for(const n of ['todos','items','logs','fixes'])unsubs.push(F.onSnapshot(col(n),s=>{S[n]=s.docs.map(d=>d.data());if(n==='fixes')notifyFix();R()},err=>denied(err)));
+ unsubs.push(F.onSnapshot(dref('meta','settings'),s=>{if(s.exists())S.meta=s.data();R()},()=>{}));
+});
+function denied(e){$('#app').hidden=true;$('#login').hidden=false;$('#lmsg').innerHTML='This account ('+esc(auth.currentUser?.email)+') is not on the family list.<br><a href="#" id="so">Sign out</a>';$('#so').onclick=()=>A.signOut(auth)}
+// ---------- points ----------
+const P={todo:10,used:2,beforeExp:3,bought:1,scan:5,fixReq:2,fix:25};
+function events(){const ev=[];
+ S.todos.forEach(t=>t.done&&t.doneBy&&ev.push({who:t.doneBy,pts:P.todo,at:t.doneAt,k:'todo'}));
+ S.logs.forEach(l=>{if(l.type==='used'){ev.push({who:l.by,pts:P.used+(l.beforeExp?P.beforeExp:0),at:l.at,k:l.beforeExp?'saved':'used'})}
+  else if(l.type==='bought')ev.push({who:l.by,pts:P.bought,at:l.at,k:'bought'});
+  else if(l.type==='scan')ev.push({who:l.by,pts:P.scan,at:l.at,k:'scan'})});
+ S.fixes.forEach(f=>{ev.push({who:f.by,pts:P.fixReq,at:f.at,k:'fixreq'});if(f.status==='fixed')ev.push({who:f.fixedBy||'oscar',pts:P.fix,at:f.fixedAt,k:'fix'})});
+ return ev.filter(e=>e.who&&e.at)}
+const weekStart=d=>{const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-x.getDay());return x};
+function stats(k){const ev=events().filter(e=>e.who===k),tot=ev.reduce((a,e)=>a+e.pts,0),ws=+weekStart(Date.now());
+ const wk=ev.filter(e=>e.at>=ws).reduce((a,e)=>a+e.pts,0);
+ const days=new Set(ev.map(e=>new Date(e.at).toLocaleDateString('en-CA')));let st=0,d=new Date();
+ if(!days.has(d.toLocaleDateString('en-CA')))d.setDate(d.getDate()-1);
+ while(days.has(d.toLocaleDateString('en-CA'))){st++;d.setDate(d.getDate()-1)}
+ const lvl=Math.floor(Math.sqrt(tot/50))+1,cnt=x=>ev.filter(e=>e.k===x).length;
+ const B=[['🌱','First points',tot>0],['✅','10 to-dos',cnt('todo')>=10],['🧾','Receipt scanner',cnt('scan')>=1],['🥕','Waste warrior (10 saves)',cnt('saved')>=10],
+  ['🔧','Fixer (5 fixes)',cnt('fix')>=5],['🔥','7-day streak',st>=7],['🏆','Level 5',lvl>=5],['💯','500 points',tot>=500]];
+ return{tot,wk,st,lvl,next:50*lvl*lvl,B}}
+function celebrate(p){const e=document.createElement('div');e.className='pop';e.textContent='+'+p+' pts';document.body.append(e);setTimeout(()=>e.remove(),1200);
+ for(let i=0;i<24;i++){const c=document.createElement('i');c.className='conf';c.style.left=Math.random()*100+'vw';c.style.background=['#0f2d52','#f26a1b','#b8321f','#1f6fa8','#f7a325'][i%5];c.style.animationDelay=Math.random()*.3+'s';document.body.append(c);setTimeout(()=>c.remove(),2100)}
+ navigator.vibrate?.(30)}
+// ---------- fix notifications ----------
+let firstFix=true;
+function notifyFix(){const open=S.fixes.filter(f=>f.status!=='fixed');
+ navigator.setAppBadge?.(S.me==='oscar'?open.length:0).catch?.(()=>{});
+ if(!firstFix&&S.me==='oscar'){const nw=S.fixes.filter(f=>f.at>S.seenFix&&f.by!=='oscar');if(nw.length&&'Notification'in window&&Notification.permission==='granted')new Notification('New Fix It request',{body:nw[0].note||'Something needs fixing',icon:'icon-180.png'})}
+ firstFix=false}
+// ---------- render ----------
+const TABS=[['todos','☑️','To-dos'],['pantry','🥫','Pantry'],['fix','🔧','Fix It'],['stats','📊','Compare'],['game','🏆','Score']];
+function R(){
+ const openFix=S.fixes.filter(f=>f.status!=='fixed'&&(S.me!=='oscar'||f.at>S.seenFix||f.status==='open')).length;
+ $('#nav').innerHTML=TABS.map(([k,i,l])=>`<button class="${S.tab===k?'on':''}" data-t="${k}"><b>${i}</b>${l}${k==='fix'&&openFix?`<span class="badge">${openFix}</span>`:''}</button>`).join('');
+ $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.t;if(S.tab==='fix'){S.seenFix=Date.now();localStorage.seenFix=S.seenFix}R();scrollTo(0,0)});
+ $('#ttl').textContent=TABS.find(t=>t[0]===S.tab)[2];
+ const st=stats(S.me);$('#who').textContent=`${nm(S.me)} · Lv ${st.lvl} · ${st.tot} pts · 🔥${st.st}`;
+ $('#addBtn').hidden=S.tab==='stats'||S.tab==='game';
+ $('#main').innerHTML=({todos:vTodos,pantry:vPantry,fix:vFix,stats:vStats,game:vGame})[S.tab]();
+ bind()}
+const dueTxt=d=>{if(!d)return'';const t=today();return d<t?`<span class="pill hi">Overdue ${d.slice(5)}</span>`:d===t?'<span class="pill md">Today</span>':`<span class="pill">${d.slice(5)}</span>`};
+let todoFilter='all';
+function vTodos(){let L=S.todos.slice();if(todoFilter==='mine')L=L.filter(t=>t.who===S.me||t.who==='both');
+ L.sort((a,b)=>(a.done-b.done)||((a.due||'9')>(b.due||'9')?1:-1));
+ return `<div class="seg">${[['all','All'],['mine','Mine']].map(([k,l])=>`<button data-tf="${k}" class="${todoFilter===k?'on':''}">${l}</button>`).join('')}</div>`+
+ (L.map(t=>`<div class="card row ${t.done?'done':''}"><button class="chk n ${t.done?'on':''}" data-done="${t.id}"></button><div data-edit="${t.id}"><div class="tt">${t.fixId?'🔧 ':''}${esc(t.title)}</div><div class="sub">${t.who==='both'?'Both':nm(t.who)} ${dueTxt(t.due)}${t.done?' · done by '+nm(t.doneBy):''}</div></div></div>`).join('')||'<p class="sub">No to-dos yet. Tap ＋ Add.</p>')}
+function itemStock(i){return+(i.qty||0)}
+function vPantry(){const L=S.items.slice().sort((a,b)=>a.name.localeCompare(b.name));
+ return `<button class="s" id="scanBtn" style="width:100%;margin-top:6px">📷 Scan a receipt</button>`+
+ (L.map(i=>{const low=i.min&&itemStock(i)<=i.min,exp=i.exp&&i.exp<=today();
+  return `<div class="card"><div class="row"><div data-item="${i.id}"><b>${esc(i.name)}</b><div class="sub">${+itemStock(i).toFixed(2)} ${esc(i.unit)} ${low?'<span class="pill hi">Low</span>':''}${i.exp?`<span class="pill ${exp?'hi':''}">exp ${i.exp.slice(5)}</span>`:''}</div></div>
+  <button class="s n" data-use="${i.id}">Used</button><button class="s n" data-buy="${i.id}">Bought</button></div></div>`}).join('')||'<p class="sub">Pantry is empty. Scan a receipt or tap ＋ Add.</p>')}
+function vFix(){const L=S.fixes.slice().sort((a,b)=>(a.status==='fixed')-(b.status==='fixed')||b.at-a.at);
+ const pr={high:'hi',med:'md',low:'lo'};
+ return (S.me==='oscar'&&'Notification'in window&&Notification.permission==='default'?'<button class="s" id="notif" style="width:100%">🔔 Alert me on new requests</button>':'')+
+ (L.map(f=>`<div class="card"><div class="row"><div><b>${esc(f.note||'Fix request')}</b><div class="sub"><span class="pill ${pr[f.pri]}">${f.pri}</span><span class="pill">${f.status==='open'?'Open':f.status==='prog'?'In progress':'✅ Fixed'}</span> from ${nm(f.by)} · ${new Date(f.at).toLocaleDateString()}</div></div></div>
+ ${f.photo?`<img class="ph" src="${f.photo}">`:''}${f.after?`<div class="sub" style="margin-top:6px">After:</div><img class="ph" src="${f.after}">`:''}
+ <div class="row" style="margin-top:8px">${f.status==='open'?`<button class="s" data-fs="${f.id}" data-v="prog">Start</button>`:''}${f.status!=='fixed'?`<button data-fixed="${f.id}">Mark fixed</button>`:''}<button class="d n" data-fdel="${f.id}">🗑</button></div></div>`).join('')||'<p class="sub">Nothing broken. 🎉 Tap ＋ Add to report something.</p>')}
+function vStats(){const now=new Date(),start=S.cmp==='week'?weekStart(now):new Date(now.getFullYear(),now.getMonth(),1);
+ const L=S.logs.filter(l=>l.at>=+start&&l.item),agg={};
+ L.forEach(l=>{const a=agg[l.item]||(agg[l.item]={b:0,u:0,w:0,$:0});if(l.type==='bought'){a.b+=+l.qty||0;a.$+=+l.price||0}else if(l.type==='used')a.u+=+l.qty||0;else if(l.type==='wasted')a.w+=+l.qty||0});
+ const rows=Object.entries(agg).map(([id,a])=>({i:S.items.find(x=>x.id===id),...a})).filter(r=>r.i).sort((x,y)=>y.$-x.$);
+ const sum=k=>rows.reduce((s,r)=>s+r[k],0),spent=sum('$'),wasted$=rows.reduce((s,r)=>s+(r.b?r.$/r.b*r.w:0),0);
+ return `<div class="seg">${[['week','This week'],['month','This month']].map(([k,l])=>`<button data-cmp="${k}" class="${S.cmp===k?'on':''}">${l}</button>`).join('')}</div>
+ <div class="card row center"><div><div class="big">$${spent.toFixed(0)}</div><div class="sub">spent</div></div><div><div class="big">${rows.length}</div><div class="sub">items</div></div><div><div class="big" style="color:var(--r)">$${wasted$.toFixed(0)}</div><div class="sub">wasted (est.)</div></div></div>
+ ${rows.map(r=>{const m=Math.max(r.b,r.u+r.w,0.001);return`<div class="card"><div class="row"><b>${esc(r.i.name)}</b><span class="sub n">${r.$?'$'+r.$.toFixed(2):''}</span></div>
+ <div class="sub">Bought ${+r.b.toFixed(2)} · Used ${+r.u.toFixed(2)} · Wasted ${+r.w.toFixed(2)} ${esc(r.i.unit)}</div>
+ <div class="bar" style="margin-top:6px"><i style="width:${r.u/m*100}%;background:var(--g)"></i><i style="width:${r.w/m*100}%;background:var(--r)"></i><i style="width:${Math.max(0,r.b-r.u-r.w)/m*100}%;background:#cfd8d3"></i></div></div>`}).join('')||'<p class="sub">No purchases or usage logged in this period yet.</p>'}
+ <p class="sub">🟩 used · 🟥 wasted/expired · ⬜ still left</p>`}
+function vGame(){const o=stats('oscar'),w=stats('wife'),lead=o.wk===w.wk?'Tied this week!':(o.wk>w.wk?nm('oscar'):nm('wife'))+' leads this week';
+ const card=(k,s)=>`<div class="card"><div class="row"><b>${esc(nm(k))}</b><span class="n pill lo">Lv ${s.lvl}</span></div>
+ <div class="row center" style="margin:8px 0"><div><div class="big">${s.wk}</div><div class="sub">this week</div></div><div><div class="big">${s.tot}</div><div class="sub">total</div></div><div><div class="big">🔥${s.st}</div><div class="sub">day streak</div></div></div>
+ <div class="bar"><i style="width:${Math.min(100,s.tot/s.next*100)}%;background:var(--o)"></i></div><div class="sub">${s.next-s.tot} pts to level ${s.lvl+1}</div>
+ <div style="margin-top:8px">${s.B.map(([i,l,on])=>`<span class="pill" style="opacity:${on?1:.3}" title="${l}">${i} ${l}</span>`).join(' ')}</div></div>`;
+ return `<div class="card center"><div class="sub">Weekly scoreboard</div><div class="big">${o.wk} – ${w.wk}</div><div>${esc(lead)} 🏆</div></div>${card('oscar',o)}${card('wife',w)}
+ <div class="card sub">Points: to-do ${P.todo} · fix ${P.fix} · fix request ${P.fixReq} · log usage ${P.used} (+${P.beforeExp} if used before it expires) · log purchase ${P.bought} · receipt scan ${P.scan}. Week resets Sunday.</div>
+ <div class="card"><label class="sub">Names</label><div class="row"><input id="n1" value="${esc(nm('oscar'))}"><input id="n2" value="${esc(nm('wife'))}"><button class="n" id="saveN">Save</button></div>
+ <p class="sub">Signed in as ${esc(auth.currentUser?.email)} · <a href="#" id="so2">Sign out</a></p></div>`}
+// ---------- sheets ----------
+function sheet(html,onSave){$('#sheet').innerHTML=`<div class="sheet"><div>${html}<div class="row" style="margin-top:14px"><button class="s" id="shX">Cancel</button>${onSave?'<button id="shOk">Save</button>':''}</div></div></div>`;
+ $('#shX').onclick=close;$('.sheet').onclick=e=>{if(e.target.classList.contains('sheet'))close()};if(onSave)$('#shOk').onclick=async()=>{if(await onSave()!==false)close()}}
+const close=()=>$('#sheet').innerHTML='',val=id=>$('#'+id).value.trim();
+const whoSel=v=>`<select id="fw">${['oscar','wife','both'].map(k=>`<option value="${k}" ${v===k?'selected':''}>${k==='both'?'Both':esc(nm(k))}</option>`).join('')}</select>`;
+function editTodo(t={}){sheet(`<h2>${t.id?'Edit':'New'} to-do</h2><label>What</label><input id="ft" value="${esc(t.title)}"><label>Who</label>${whoSel(t.who||S.me)}<label>Due</label><input id="fd" type="date" value="${t.due||''}">${t.id?`<button class="d" id="tdel">Delete</button>`:''}`,
+ ()=>{if(!val('ft'))return false;save('todos',{id:t.id||uid(),title:val('ft'),who:$('#fw').value,due:$('#fd').value,done:t.done||false,at:t.at||Date.now()})});
+ if(t.id)$('#tdel').onclick=()=>{del('todos',t.id);close()}}
+function editItem(i={}){sheet(`<h2>${i.id?'Edit':'New'} item</h2><label>Name</label><input id="fn" value="${esc(i.name)}"><div class="row"><div><label>In stock</label><input id="fq" type="number" inputmode="decimal" value="${i.qty??''}"></div><div><label>Unit</label><input id="fu" value="${esc(i.unit||'ea')}"></div></div>
+ <div class="row"><div><label>Low at</label><input id="fm" type="number" inputmode="decimal" value="${i.min??''}"></div><div><label>Expires</label><input id="fe" type="date" value="${i.exp||''}"></div></div>
+ ${i.id?`<button class="s" id="wst" style="margin-top:10px">🗑 Log wasted / expired</button> <button class="d" id="idel">Delete item</button>`:''}`,
+ ()=>{if(!val('fn'))return false;save('items',{id:i.id||uid(),name:val('fn'),qty:+val('fq')||0,unit:val('fu')||'ea',min:+val('fm')||0,exp:$('#fe').value})});
+ if(i.id){$('#idel').onclick=()=>{del('items',i.id);close()};$('#wst').onclick=()=>qtyLog(i,'wasted')}}
+function qtyLog(i,type){const L={used:'Used',bought:'Bought',wasted:'Wasted / expired'}[type];
+ sheet(`<h2>${L}: ${esc(i.name)}</h2><label>Amount (${esc(i.unit)})</label><input id="lq" type="number" inputmode="decimal" value="1">${type==='bought'?'<label>Price paid ($)</label><input id="lp" type="number" inputmode="decimal"><label>New expiry (optional)</label><input id="le" type="date">':''}`,
+ async()=>{const q=+val('lq');if(!q)return false;const pts=await logQty(i,type,q,type==='bought'?+val('lp')||0:0,type==='bought'?$('#le').value:'');if(pts)celebrate(pts)})}
+async function logQty(i,type,q,price=0,exp=''){const before=type==='used'&&i.exp&&today()<=i.exp;
+ const nq=Math.max(0,+(itemStock(i)+(type==='bought'?q:-q)).toFixed(3));
+ await save('items',{...i,qty:nq,...(exp?{exp}:{})});
+ await save('logs',{id:uid(),item:i.id,type,qty:q,price,by:S.me,at:Date.now(),beforeExp:!!before});
+ return type==='used'?P.used+(before?P.beforeExp:0):type==='bought'?P.bought:0}
+async function shrink(file,max=1000,q=.6){const img=await createImageBitmap(file);const s=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=img.width*s;c.height=img.height*s;c.getContext('2d').drawImage(img,0,0,c.width,c.height);let u=c.toDataURL('image/jpeg',q);if(u.length>700000)u=c.toDataURL('image/jpeg',.4);return u}
+function newFix(){sheet(`<h2>🔧 Fix It request</h2><label>Photo of the problem</label><input id="fp" type="file" accept="image/*"><img id="fpv" class="ph" hidden><label>What's wrong?</label><input id="fno" placeholder="e.g. Kitchen faucet dripping"><label>Priority</label><select id="fpr"><option value="low">Low</option><option value="med" selected>Medium</option><option value="high">High</option></select>`,
+ async()=>{if(!val('fno')&&!fixPhoto)return false;const id=uid();
+  await save('fixes',{id,note:val('fno'),pri:$('#fpr').value,photo:fixPhoto||'',status:'open',by:S.me,at:Date.now()});
+  await save('todos',{id:'fx'+id,fixId:id,title:val('fno')||'Fix request',who:'oscar',due:$('#fpr').value==='high'?today():'',done:false,at:Date.now()});celebrate(P.fixReq)});
+ let fixPhoto='';$('#fp').onchange=async e=>{if(e.target.files[0]){fixPhoto=await shrink(e.target.files[0]);$('#fpv').src=fixPhoto;$('#fpv').hidden=false}}}
+function markFixed(f){let after='';sheet(`<h2>✅ Mark fixed</h2><p>${esc(f.note)}</p><label>"After" photo (optional)</label><input id="ap" type="file" accept="image/*"><img id="apv" class="ph" hidden>`,
+ async()=>{await save('fixes',{...f,status:'fixed',fixedBy:S.me,fixedAt:Date.now(),after});const t=S.todos.find(t=>t.fixId===f.id);if(t)await save('todos',{...t,done:true,doneBy:S.me,doneAt:Date.now()});celebrate(P.fix+(t?P.todo:0))});
+ $('#ap').onchange=async e=>{if(e.target.files[0]){after=await shrink(e.target.files[0]);$('#apv').src=after;$('#apv').hidden=false}}}
+// ---------- receipt scan ----------
+let tess;async function ocr(file,cb){if(!tess){await new Promise((r,j)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';s.onload=r;s.onerror=j;document.head.append(s)})}
+ const img=await shrink(file,1800,.9);const w=await Tesseract.createWorker('eng',1,{logger:m=>m.progress&&cb(Math.round(m.progress*100)+'% '+m.status)});const {data}=await w.recognize(img);await w.terminate();return data.text}
+function scan(){sheet(`<h2>🧾 Scan receipt</h2><p class="sub">Take a photo or pick a screenshot. Flat, bright, straight-on works best.</p><input id="rf" type="file" accept="image/*"><p id="rs" class="sub"></p><div id="rl"></div>`,null);
+ $('#rf').onchange=async e=>{const f=e.target.files[0];if(!f)return;$('#rs').textContent='Reading receipt…';
+  try{const txt=await ocr(f,m=>$('#rs').textContent='Reading… '+m);review(parseReceipt(txt),txt)}catch(err){$('#rs').textContent='Could not read it: '+err.message}}}
+function review(rows,txt){const opts=S.items.map(i=>`<option value="${i.id}">${esc(i.name)}</option>`).join('');
+ const match=n=>{const k=n.toLowerCase().split(' ')[0];return S.items.find(i=>i.name.toLowerCase().includes(k))?.id||''};
+ $('#rs').textContent=rows.length?`Found ${rows.length} items. Check them, then Add.`:'No item lines found. Add rows by hand below.';
+ const row=(r={name:'',qty:1,unit:'ea',price:''})=>`<div class="card rr"><div class="row"><input class="rn" value="${esc(r.name)}" placeholder="Item"><button class="d n rx">✕</button></div>
+  <div class="row" style="margin-top:6px"><input class="rq" type="number" inputmode="decimal" value="${r.qty}"><input class="ru" value="${esc(r.unit)}"><input class="rp" type="number" inputmode="decimal" value="${r.price}" placeholder="$"></div>
+  <select class="rm" style="margin-top:6px"><option value="">➕ New pantry item</option>${opts}</select></div>`;
+ $('#rl').innerHTML=rows.map(row).join('')+`<button class="s" id="radd">＋ Row</button> <button id="rok">Add to pantry</button><details><summary class="sub">Raw text</summary><pre class="sub" style="white-space:pre-wrap">${esc(txt)}</pre></details>`;
+ const wire=()=>$('#rl').querySelectorAll('.rr').forEach((el,ix)=>{el.querySelector('.rx').onclick=()=>el.remove();const m=el.querySelector('.rm');if(!m.dataset.w){m.dataset.w=1;m.value=match(el.querySelector('.rn').value)}});wire();
+ $('#radd').onclick=()=>{$('#radd').insertAdjacentHTML('beforebegin',row());wire()};
+ $('#rok').onclick=async()=>{let n=0;for(const el of $('#rl').querySelectorAll('.rr')){const name=el.querySelector('.rn').value.trim();if(!name)continue;
+   const q=+el.querySelector('.rq').value||1,u=el.querySelector('.ru').value||'ea',p=+el.querySelector('.rp').value||0,mid=el.querySelector('.rm').value;
+   let it=S.items.find(i=>i.id===mid);if(!it){it={id:uid(),name,qty:0,unit:u,min:0,exp:''};await save('items',it)}
+   await logQty(it,'bought',q,p);S.items=S.items.filter(i=>i.id!==it.id).concat({...it,qty:itemStock(it)+q});n++}
+  if(n){await save('logs',{id:uid(),type:'scan',by:S.me,at:Date.now()});celebrate(P.scan+n*P.bought)}close()}}
+// ---------- bindings ----------
+function bind(){const m=$('#main'),on=(sel,fn)=>m.querySelectorAll(sel).forEach(e=>e.onclick=()=>fn(e));
+ on('[data-tf]',e=>{todoFilter=e.dataset.tf;R()});on('[data-cmp]',e=>{S.cmp=e.dataset.cmp;R()});
+ on('[data-done]',async e=>{const t=S.todos.find(x=>x.id===e.dataset.done),d=!t.done;
+  if(t.fixId&&d){const f=S.fixes.find(f=>f.id===t.fixId);if(f)return markFixed(f)}
+  await save('todos',{...t,done:d,doneBy:d?S.me:null,doneAt:d?Date.now():null});if(d)celebrate(P.todo)});
+ on('[data-edit]',e=>editTodo(S.todos.find(x=>x.id===e.dataset.edit)));
+ on('[data-item]',e=>editItem(S.items.find(x=>x.id===e.dataset.item)));
+ on('[data-use]',e=>qtyLog(S.items.find(x=>x.id===e.dataset.use),'used'));
+ on('[data-buy]',e=>qtyLog(S.items.find(x=>x.id===e.dataset.buy),'bought'));
+ on('[data-fs]',e=>{const f=S.fixes.find(x=>x.id===e.dataset.fs);save('fixes',{...f,status:'prog'})});
+ on('[data-fixed]',e=>markFixed(S.fixes.find(x=>x.id===e.dataset.fixed)));
+ on('[data-fdel]',e=>{if(confirm('Delete this request?')){del('fixes',e.dataset.fdel);del('todos','fx'+e.dataset.fdel)}});
+ on('#scanBtn',scan);on('#notif',()=>Notification.requestPermission().then(R));
+ on('#saveN',()=>F.setDoc(dref('meta','settings'),{names:{oscar:val('n1')||'Oscar',wife:val('n2')||'Wife'}},{merge:true}));
+ on('#so2',()=>A.signOut(auth))}
+$('#addBtn').onclick=()=>({todos:editTodo,pantry:editItem,fix:newFix})[S.tab]?.();
+document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
+document.addEventListener('gesturestart',e=>e.preventDefault());
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
+</script></body></html>
