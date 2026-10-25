@@ -288,7 +288,7 @@ function sheet(html,onSave){$('#sheet').innerHTML=`<div class="sheet"><div>${htm
 function toast(m){document.querySelectorAll('.toast').forEach(x=>x.remove());const e=document.createElement('div');e.className='toast';e.setAttribute('role','alert');e.textContent=m;e.onclick=()=>e.remove();document.body.append(e);setTimeout(()=>e.remove(),6000)}
 const close=()=>$('#sheet').innerHTML='',val=id=>$('#'+id).value.trim();
 const whoSel=v=>`<select id="fw">${['oscar','wife','both'].map(k=>`<option value="${k}" ${v===k?'selected':''}>${k==='both'?'Both':esc(nm(k))}</option>`).join('')}</select>`;
-function editTodo(t={}){const r=t.rep||null,rk=repKey(r);sheet(`<h2>${t.id?'Edit':'New'} to-do</h2>${t.id?'':`<label>Quick add a repeating chore</label><div style="display:flex;flex-wrap:wrap;gap:6px">${TPL.map((x,i)=>`<button class="s n sm" data-tpl="${i}" style="padding:6px 10px;font-size:13px">🔁 ${esc(x[0])}</button>`).join('')}</div>`}
+function editTodo(t={}){const r=t.rep||null,rk=repKey(r);sheet(`<h2>${t.id?'Edit':'New'} to-do</h2>
  <label>What</label><input id="ft" value="${esc(t.title)}"><label>Who</label>${whoSel(t.who||S.me)}<label>${r?'Next due':'Due'}</label><input id="fd" type="date" value="${t.due||''}">
  <label>Repeat</label><select id="frep">${REPS.map(([k,l])=>`<option value="${k}" ${k===rk?'selected':''}>${l}</option>`).join('')}</select>
  <div id="frepx"><div id="fwk" style="display:flex;gap:4px;margin-top:8px">${WD.map((d,i)=>`<button class="${(r&&r.days||[]).includes(i)?'':'s'} n sm" data-wd="${i}" style="flex:1;padding:6px 0;font-size:12px">${d}</button>`).join('')}</div>
