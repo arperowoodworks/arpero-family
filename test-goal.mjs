@@ -1,0 +1,15 @@
+import puppeteer from 'puppeteer-core';
+const b=await puppeteer.launch({executablePath:'/usr/bin/google-chrome',headless:'new',args:['--no-sandbox']});
+const p=await b.newPage();await p.setViewport({width:375,height:667,deviceScaleFactor:2,isMobile:true,hasTouch:true});
+const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>{if(m.type()==='error'||m.type()==='warning')errs.push(m.text())});
+const W=ms=>new Promise(r=>setTimeout(r,ms||500));const click=async s=>{await p.$eval(s,e=>e.click());await W()};const type=(s,v)=>p.$eval(s,(e,v)=>{e.value=v},v);
+await p.goto('http://127.0.0.1:8833/?go=budget',{waitUntil:'networkidle0'});await W(800);
+await p.evaluate(()=>{window.__D['families/arpero/meta']={settings:{hb:{setup:true,income:[{id:'a',who:'oscar',amt:2000,freq:'biweekly'}],limits:{}}}}});
+await click('[data-go="budget"]').catch(()=>{});await p.evaluate(()=>window.scrollTo(0,0));
+console.log('pgnew btns',(await p.$$('[data-pgnew]')).length);
+await click('[data-pgnew="oscar"]');await type('#pgn','Table saw');await type('#pgt','800');await click('#shOk');await W(800);
+console.log('sheet open after save?',await p.$eval('#sheet',e=>e.innerHTML.length));
+await click('[data-pgnew="wife"]');await type('#pgn','Trip');await type('#pgt','500');await click('#shOk');await W(800);
+await click('#gEdit');await type('#sgn','Emergency');await type('#sgt','3000');await click('#shOk');await W(800);
+console.log(JSON.stringify(await p.evaluate(()=>window.__D['families/arpero/meta'].settings)));
+console.log('ERR',errs);await b.close();

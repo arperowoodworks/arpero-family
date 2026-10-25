@@ -20,7 +20,7 @@ export function parseICS(txt,days=75){const un=txt.replace(/\r?\n[ \t]/g,''),out
   else push(s)}
  return out.sort((a,b)=>a.s>b.s?1:-1)}
 export function initCal({db,F,me,el,app,names={oscar:'Oscar',wife:'Kerissa'},onChange}){
- const C=n=>F.collection(db,'families','arpero',n),D=(n,id)=>F.doc(db,'families','arpero',n,id),S={events:[],chores:[],maint:[],dates:[],work:{blocks:[]},ics:{},view:'agenda',sheet:null};
+ const C=n=>F.collection(db,'families','arpero',n),D=(n,id)=>F.doc(db,'families','arpero',n,id),S={events:[],todos:[],chores:[],maint:[],dates:[],work:{blocks:[]},ics:{},view:'agenda',sheet:null};
  const nm=k=>names[k]||k,uid=()=>Math.random().toString(36).slice(2,10);
  const subs=[];
  async function refreshICS(force){const u=(S.ics.url||'').trim().replace(/^webcal:/i,'https:');if(!u)return;S.busy=true;render();let txt='',how='direct';
@@ -33,6 +33,7 @@ export function initCal({db,F,me,el,app,names={oscar:'Oscar',wife:'Kerissa'},onC
  function all(from,to){const L=[],inR=d=>d>=from&&d<=to;
   S.events.forEach(e=>{if(inR(e.s.slice(0,10)))L.push({...e,lab:e.src==='shop'?(app==='shop'?e.title:`Oscar busy: Shop${e.title?' · '+e.title:''}`):e.title,c:e.color||(e.src==='shop'?'#0f2d52':e.kind==='date'?'#e0457b':e.kind==='baby'?'#7c5cff':'#f26a1b')})});
   (S.work.blocks||[]).forEach(b=>inR(b.s.slice(0,10))&&L.push({...b,lab:'Oscar at work',c:'#8a8f98',src:'work',ro:1}));
+  (S.todos||[]).forEach(t=>{if(t.done||!t.due)return;if(!t.rep||!globalThis.repNext){const d=t.due<from&&t.rep?from:t.due;inR(d)&&L.push({s:d,allDay:true,lab:`✅ ${t.title}`,c:'#2e7d4f',ro:1});return}let d=t.due,g=0;if(d<from){L.push({s:from,allDay:true,lab:`🔁 ${t.title} (overdue)`,c:'#d33',ro:1});d=globalThis.repNext(t.rep,d);while(d<from&&g++<400)d=globalThis.repNext(t.rep,d)}while(d<=to&&g++<400){L.push({s:d,allDay:true,lab:`🔁 ${t.title}${t.who==='both'?'':' ('+nm(t.who)+')'}`,c:'#2e7d4f',ro:1});d=globalThis.repNext(t.rep,d)}});
   S.chores.forEach(c=>c.next&&inR(c.next<from?from:c.next)&&L.push({s:c.next<from?from:c.next,allDay:true,lab:`🧹 ${c.name} (${nm(c.turn)})`,c:'#f26a1b',ro:1}));
   S.maint.forEach(m=>{const due=m.last?addD(m.last,m.every):from;inR(due<from?from:due)&&L.push({s:due<from?from:due,allDay:true,lab:'🛠️ '+m.name,c:'#f7a325',ro:1})});
   S.dates.forEach(d=>{if(!d.date)return;let n=d.date;if(d.yearly){const y=+from.slice(0,4);n=y+d.date.slice(4);if(n<from)n=(y+1)+d.date.slice(4)}inR(n)&&L.push({s:n,allDay:true,lab:'📅 '+d.name,c:'#e0457b',ro:1})});
@@ -84,7 +85,7 @@ export function initCal({db,F,me,el,app,names={oscar:'Oscar',wife:'Kerissa'},onC
  async function syncShop(items){const keep=new Set();for(const it of items){if(!it.date)continue;const id='shop_'+it.id;keep.add(id);const cur=S.events.find(e=>e.id===id);
    if(!cur||cur.title!==it.title||cur.s!==it.date)await F.setDoc(D('events',id),{id,title:it.title,kind:'shop',src:'shop',s:it.date,e:it.date,allDay:true,auto:true,by:'oscar',at:Date.now()})}
   for(const e of S.events)if(e.auto&&e.src==='shop'&&!keep.has(e.id))await F.deleteDoc(D('events',e.id))}
- ['events','chores','maint','dates'].forEach(n=>subs.push(F.onSnapshot(C(n),s=>{S[n]=s.docs.map(d=>d.data());render()},()=>{})));
+ ['events','chores','maint','dates',...(app==='shop'?[]:['todos'])].forEach(n=>subs.push(F.onSnapshot(C(n),s=>{S[n]=s.docs.map(d=>d.data());render()},()=>{})));
  subs.push(F.onSnapshot(D('meta','work'),s=>{S.work=s.exists()?s.data():{blocks:[]};render()},()=>{}));
  if(me==='oscar')subs.push(F.onSnapshot(D('private','ics'),s=>{S.ics=s.exists()?s.data():{};maybeRefresh();render()},()=>{}));
  render();return{render,syncShop,suggest,stop:()=>subs.forEach(f=>f())}}

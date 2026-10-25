@@ -212,11 +212,26 @@ function R(){pulseSoon();
  $('#main').innerHTML=S.sub?(S.sub!=='more'?'<a href="#" data-sub="" style="display:inline-block;margin:2px 4px 6px;font-size:17px;text-decoration:none">‹ More</a>':'')+VIEWS[S.sub]():(S.tab==='cal'?'':({home:vHome,todos:vTodos,pantry:vPantry,fix:vFix,more:vMore})[S.tab]());if(S.tab==='cal'&&calApi){$('#main').append(calEl);calApi.render()}
  bind()}
 const dueTxt=d=>{if(!d)return'';const t=today();return d<t?`<span class="pill hi">Overdue ${d.slice(5)}</span>`:d===t?'<span class="pill md">Today</span>':`<span class="pill">${d.slice(5)}</span>`};
+// ---------- repeating to-dos ----------
+const REPS=[['','Does not repeat'],['daily','Every day'],['d2','Every 2 days'],['d3','Every 3 days'],['weekly','Weekly (pick days)'],['2weeks','Every 2 weeks'],['monthly','Monthly'],['custom','Every N days (custom)']];
+const WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const repKey=r=>!r?'':r.k==='n'?(r.n===2?'d2':r.n===3?'d3':r.n===1?'daily':'custom'):r.k;
+function repNext(r,base){if(!r)return base;const d=new Date(base+'T12:00'),f=x=>x.toLocaleDateString('en-CA');
+ if(r.k==='daily'){d.setDate(d.getDate()+1);return f(d)}if(r.k==='n'){d.setDate(d.getDate()+Math.max(1,+r.n||1));return f(d)}if(r.k==='2weeks'){d.setDate(d.getDate()+14);return f(d)}
+ if(r.k==='monthly'){const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+1);d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));return f(d)}
+ if(r.k==='weekly'){const days=(r.days&&r.days.length)?r.days:[d.getDay()];for(let i=1;i<=7;i++){d.setDate(d.getDate()+1);if(days.includes(d.getDay()))return f(d)}}return f(d)}
+const repLabel=r=>!r?'':r.k==='daily'||(r.k==='n'&&+r.n===1)?'every day':r.k==='n'?`every ${r.n} days`:r.k==='2weeks'?'every 2 weeks':r.k==='monthly'?'monthly':r.k==='weekly'?'weekly'+(r.days&&r.days.length?' · '+r.days.slice().sort().map(x=>WD[x]).join(' & '):''):'';
+globalThis.repNext=repNext;globalThis.repLabel=repLabel;
+const repTag=t=>t.rep?`<span class="pill">🔁 ${esc(repLabel(t.rep))}</span>`:'';
+const TPL=[['Dishes',{k:'daily'}],['Laundry',{k:'n',n:3}],['Take out trash',{k:'weekly',days:[]}],['Wash bottles / sippy cups',{k:'daily'}],['Vacuum',{k:'weekly',days:[]}],['Change sheets',{k:'2weeks'}]];
+function repDone(t){const td=today();let base=t.rep.from==='sched'?(t.due||td):td,n=repNext(t.rep,base),g=0;while(n<=td&&t.rep.from==='sched'&&g++<400)n=repNext(t.rep,n);
+ fw(save('todos',{...t,due:n,done:false,doneBy:null,doneAt:null,lastBy:S.me,lastAt:Date.now(),count:(t.count||0)+1}));fw(plog('todo',P.todo,{name:t.title,rec:t.id}));celebrate(`+${P.todo} pts · next ${shortDay(n)}`)}
+function repSkip(t){const td=today();let n=repNext(t.rep,t.due||td),g=0;while(n<td&&g++<400)n=repNext(t.rep,n);fw(save('todos',{...t,due:n,skips:(t.skips||0)+1}));celebrate('Skipped · next '+shortDay(n))}
 let todoFilter='all';
 function vTodos(){let L=S.todos.slice();if(todoFilter==='mine')L=L.filter(t=>t.who===S.me||t.who==='both');
  L.sort((a,b)=>(a.done-b.done)||((a.due||'9')>(b.due||'9')?1:-1));
  return `<div class="seg">${[['all','All'],['mine','Mine']].map(([k,l])=>`<button data-tf="${k}" class="${todoFilter===k?'on':''}">${l}</button>`).join('')}</div>`+
- (L.map(t=>`<div class="card row ${t.done?'done':''}"><button class="chk n ${t.done?'on':''}" data-done="${t.id}"></button><div data-edit="${t.id}"><div class="tt">${t.fixId?'🔧 ':''}${esc(t.title)}</div><div class="sub">${t.who==='both'?'Both':nm(t.who)} ${dueTxt(t.due)}${t.done?' · done by '+nm(t.doneBy):''}</div></div></div>`).join('')||'<p class="sub">No to-dos yet. Tap ＋ Add.</p>')}
+ (L.map(t=>`<div class="card row ${t.done?'done':''}"><button class="chk n ${t.done?'on':''}" data-done="${t.id}"></button><div data-edit="${t.id}"><div class="tt">${t.fixId?'🔧 ':''}${esc(t.title)}</div><div class="sub">${t.who==='both'?'Both':nm(t.who)} ${dueTxt(t.due)} ${repTag(t)}${t.done?' · done by '+nm(t.doneBy):''}${t.rep&&t.lastBy?` · last done by ${esc(nm(t.lastBy))}`:''}</div></div></div>`).join('')||'<p class="sub">No to-dos yet. Tap ＋ Add.</p>')}
 function itemStock(i){return+(i.qty||0)}
 function vPantry(){if(S.pantrySeg==='shop')return segP()+vShop();const L=S.items.slice().sort((a,b)=>a.name.localeCompare(b.name));
  return segP()+`<button class="s" id="scanBtn" style="width:100%;margin-top:6px">📷 Scan a receipt</button>`+
@@ -270,8 +285,21 @@ function sheet(html,onSave){$('#sheet').innerHTML=`<div class="sheet"><div>${htm
  $('#shX').onclick=close;$('.sheet').onclick=e=>{if(e.target.classList.contains('sheet'))close()};if(onSave)$('#shOk').onclick=async()=>{const b=$('#shOk');if(b.disabled)return;b.disabled=true;let r;try{r=await Promise.race([Promise.resolve(onSave()),new Promise(z=>setTimeout(()=>z('bg'),1500))])}catch(e){alert("Couldn't save: "+(e.message||e));r=false}b.disabled=false;if(r!==false)close()}}
 const close=()=>$('#sheet').innerHTML='',val=id=>$('#'+id).value.trim();
 const whoSel=v=>`<select id="fw">${['oscar','wife','both'].map(k=>`<option value="${k}" ${v===k?'selected':''}>${k==='both'?'Both':esc(nm(k))}</option>`).join('')}</select>`;
-function editTodo(t={}){sheet(`<h2>${t.id?'Edit':'New'} to-do</h2><label>What</label><input id="ft" value="${esc(t.title)}"><label>Who</label>${whoSel(t.who||S.me)}<label>Due</label><input id="fd" type="date" value="${t.due||''}">${t.id?`<button class="d" id="tdel">Delete</button>`:''}`,
- ()=>{if(!val('ft'))return false;save('todos',{id:t.id||uid(),title:val('ft'),who:$('#fw').value,due:$('#fd').value,done:t.done||false,at:t.at||Date.now()})});
+function editTodo(t={}){const r=t.rep||null,rk=repKey(r);sheet(`<h2>${t.id?'Edit':'New'} to-do</h2>${t.id?'':`<label>Quick add a repeating chore</label><div style="display:flex;flex-wrap:wrap;gap:6px">${TPL.map((x,i)=>`<button class="s n sm" data-tpl="${i}" style="padding:6px 10px;font-size:13px">🔁 ${esc(x[0])}</button>`).join('')}</div>`}
+ <label>What</label><input id="ft" value="${esc(t.title)}"><label>Who</label>${whoSel(t.who||S.me)}<label>${r?'Next due':'Due'}</label><input id="fd" type="date" value="${t.due||''}">
+ <label>Repeat</label><select id="frep">${REPS.map(([k,l])=>`<option value="${k}" ${k===rk?'selected':''}>${l}</option>`).join('')}</select>
+ <div id="frepx"><div id="fwk" style="display:flex;gap:4px;margin-top:8px">${WD.map((d,i)=>`<button class="${(r&&r.days||[]).includes(i)?'':'s'} n sm" data-wd="${i}" style="flex:1;padding:6px 0;font-size:12px">${d}</button>`).join('')}</div>
+ <div id="fcn"><label>Every how many days</label><input id="frn" type="number" inputmode="numeric" value="${r&&r.k==='n'?r.n:4}"></div>
+ <label>Next due counts from</label><select id="ffrom"><option value="done" ${!r||r.from!=='sched'?'selected':''}>When it was done</option><option value="sched" ${r&&r.from==='sched'?'selected':''}>The scheduled date</option></select></div>
+ ${t.id&&r?`<div class="row" style="gap:8px;margin-top:12px"><button class="s" id="tskip" style="flex:1">Skip this time</button><button class="s" id="tstop" style="flex:1">Stop repeating</button></div>`:''}${t.id?`<button class="d" id="tdel" style="margin-top:8px">Delete</button>`:''}`,
+ ()=>{if(!val('ft'))return false;const k=$('#frep').value,days=[...$('#fwk').querySelectorAll('[data-wd]')].filter(b=>!b.classList.contains('s')).map(b=>+b.dataset.wd);
+  const rp=!k?null:{k:k==='d2'||k==='d3'||k==='custom'?'n':k,...(k==='d2'?{n:2}:k==='d3'?{n:3}:k==='custom'?{n:Math.max(1,+val('frn')||1)}:{}),...(k==='weekly'?{days}:{}),from:$('#ffrom').value};
+  let due=$('#fd').value;if(rp&&!due)due=today();if(rp&&k==='weekly'&&days.length&&!days.includes(new Date(due+'T12:00').getDay()))due=repNext(rp,addDays(due,-1));
+  save('todos',{id:t.id||uid(),title:val('ft'),who:$('#fw').value,due,done:rp?false:(t.done||false),at:t.at||Date.now(),rep:rp})});
+ const vis=()=>{const k=$('#frep').value;$('#frepx').hidden=!k;$('#fwk').hidden=k!=='weekly';$('#fcn').hidden=k!=='custom'};vis();$('#frep').onchange=vis;
+ $('#fwk').querySelectorAll('[data-wd]').forEach(b=>b.onclick=()=>b.classList.toggle('s'));
+ $('#sheet').querySelectorAll('[data-tpl]').forEach(b=>b.onclick=()=>{const [n,r2]=TPL[+b.dataset.tpl];$('#ft').value=n;$('#frep').value=repKey(r2);$('#fw').value='both';if(!$('#fd').value)$('#fd').value=today();vis()});
+ if(t.id&&r){$('#tskip').onclick=()=>{close();repSkip(t)};$('#tstop').onclick=()=>{close();fw(save('todos',{...t,rep:null}));celebrate('Stopped repeating')}}
  if(t.id)$('#tdel').onclick=()=>{del('todos',t.id);close()}}
 function editItem(i={}){sheet(`<h2>${i.id?'Edit':'New'} item</h2><label>Name</label><input id="fn" value="${esc(i.name)}"><div class="row"><div><label>In stock</label><input id="fq" type="number" inputmode="decimal" value="${i.qty??''}"></div><div><label>Unit</label><input id="fu" value="${esc(i.unit||'ea')}"></div></div>
  <label>Category</label><select id="fc">${CATS.map(c=>`<option ${(i.cat||guessCat(i.name||''))===c?'selected':''}>${c}</option>`).join('')}</select><div class="row"><div><label>Add to shopping list when at or below</label><input id="fm" type="number" inputmode="decimal" value="${i.min??''}"></div><div><label>Expires</label><input id="fe" type="date" value="${i.exp||''}"></div></div><div class="row"><div><label>Price paid for this amount ($, optional)</label><input id="fpp" type="number" inputmode="decimal" placeholder="${ucost(i)&&i.qty?(ucost(i)*i.qty).toFixed(2):''}"></div><div><label>Store</label><select id="fst">${['','Aldi','Walmart','Other'].map(x=>`<option ${i.store===x?'selected':''}>${x}</option>`).join('')}</select></div></div>${ucost(i)?`<p class="sub">Cost: ${usd(ucost(i))} per ${esc(i.unit||'ea')}</p>`:''}
@@ -327,6 +355,7 @@ function bind(){const m=$('#main'),on=(sel,fn)=>m.querySelectorAll(sel).forEach(
  on('[data-tf]',e=>{todoFilter=e.dataset.tf;R()});on('[data-cmp]',e=>{S.cmp=e.dataset.cmp;R()});
  on('[data-done]',async e=>{const t=S.todos.find(x=>x.id===e.dataset.done),d=!t.done;
   if(t.fixId&&d){const f=S.fixes.find(f=>f.id===t.fixId);if(f)return markFixed(f)}
+  if(t.rep&&d)return repDone(t);
   await save('todos',{...t,done:d,doneBy:d?S.me:null,doneAt:d?Date.now():null});if(d)celebrate(P.todo)});
  on('[data-edit]',e=>editTodo(S.todos.find(x=>x.id===e.dataset.edit)));
  on('[data-item]',e=>editItem(S.items.find(x=>x.id===e.dataset.item)));
@@ -421,7 +450,7 @@ const partner=()=>S.me==='oscar'?'wife':'oscar';
 function shoutable(){const p=partner(),since=Date.now()-3*864e5,done=new Set(S.shouts.map(x=>x.ref)),L=[];
  S.todos.forEach(t=>t.done&&t.doneBy===p&&t.doneAt>since&&L.push({ref:'t'+t.id,text:`${t.fixId?'fixed':'finished'} “${t.title}”`,at:t.doneAt}));
  S.fixes.forEach(f=>f.status==='fixed'&&(f.fixedBy||'oscar')===p&&f.fixedAt>since&&!S.todos.some(t=>t.fixId===f.id&&t.done)&&L.push({ref:'f'+f.id,text:`fixed “${f.note}”`,at:f.fixedAt}));
- S.logs.forEach(l=>(l.type==='chore'||l.type==='maint'||l.type==='cook')&&l.by===p&&l.at>since&&L.push({ref:'l'+l.id,text:`${l.type==='cook'?'cooked':'did'} ${l.name}`,at:l.at}));
+ S.logs.forEach(l=>(l.type==='chore'||l.type==='maint'||l.type==='cook'||(l.type==='todo'&&l.rec))&&l.by===p&&l.at>since&&L.push({ref:'l'+l.id,text:`${l.type==='cook'?'cooked':'did'} ${l.name}`,at:l.at}));
  return L.filter(x=>!done.has(x.ref)).sort((a,b)=>b.at-a.at).slice(0,3)}
 async function sendThanks(ref,text){await save('shouts',{id:uid(),ref,from:S.me,to:partner(),text,at:Date.now(),seen:false});await plog('thanks',2,{name:'Shout-out'});celebrate(2)}
 function nudgeText(){const n=S.meta.nudge?.[S.me]||{};if(n.on===false)return'';
@@ -514,7 +543,8 @@ function vHome(){const t=today(),tm=stats(),g=goal(),pc=Math.min(100,Math.round(
  `<div class="card goal row" data-go="score"><div class="star n">${icon('star')}</div><div><div><b>${tm.wk} / ${g}</b> <span class="sub">pts this week</span></div><div class="sub" style="margin:2px 0 8px">Team goal progress</div><div class="bar"><i style="width:${pc}%;background:var(--g)"></i></div></div><div class="n center" style="color:var(--o);font-weight:500"><div style="font-size:24px">🔥</div>${tm.st}d</div></div>`+useSoonCard()+babyHomeCard()+tilesGrid()+
  sundayCard()+hbRecapCard()+pgTodayCard()+chCard()+
  `<div class="sec" style="margin:22px 4px 10px"><h2 style="margin:0">Today</h2><a href="#" data-go="t:todos">See all</a></div><div class="list">`+
- todo.map(x=>`<div class="card row"><button class="chk n" data-done="${x.id}"></button><div data-edit="${x.id}"><div class="tt">${esc(x.title)}</div>${x.who==='both'?'<div class="sub">Both of us</div>':''}</div>${pri(x)?`<span class="n">${pri(x)}</span>`:''}</div>`).join('')+
+ todo.map(x=>`<div class="card row"><button class="chk n" data-done="${x.id}"></button><div data-edit="${x.id}"><div class="tt">${x.rep?'🔁 ':''}${esc(x.title)}</div>${x.who==='both'||x.rep?`<div class="sub">${x.who==='both'?'Both of us':''}${x.rep?(x.who==='both'?' · ':'')+esc(repLabel(x.rep)):''}</div>`:''}</div>${pri(x)?`<span class="n">${pri(x)}</span>`:''}</div>`).join('')+
+ S.todos.filter(x=>x.rep&&!x.done&&x.due>t&&x.due<=addDays(t,3)&&(x.who===S.me||x.who==='both')).sort((a,b)=>a.due>b.due?1:-1).slice(0,4).map(x=>`<div class="card row" data-edit="${x.id}" style="opacity:.75"><div><div>🔁 ${esc(x.title)}</div><div class="sub">Coming up ${shortDay(x.due)} · ${esc(repLabel(x.rep))}</div></div></div>`).join('')+
  ch.map(c=>`<div class="card row"><button class="chk n" data-chdone="${c.id}"></button><div><div>${esc(c.name)}</div><div class="sub">Chore · ${esc(nm(c.turn))}'s turn · ${c.pts} pts</div></div></div>`).join('')+
  doneToday.map(x=>`<div class="card row done"><button class="chk on n" data-done="${x.id}"></button><div><div class="tt">${esc(x.title)}</div></div></div>`).join('')+
  `<div class="addrow" data-q="todo">＋ Add new to-do</div></div>`+
