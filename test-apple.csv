@@ -1,0 +1,9 @@
+Transaction Date,Clearing Date,Description,Merchant,Category,Type,Amount (USD),Purchased By
+10/20/2026,10/21/2026,"ALDI 72031 CHICAGO IL","Aldi",Grocery,Purchase,52.10,Oscar Arpero
+10/21/2026,10/22/2026,"WALMART SUPERCENTER #123","Walmart",Grocery,Purchase,64.37,Kerissa Arpero
+10/22/2026,10/22/2026,"SHELL OIL 5744","Shell",Gas,Purchase,41.00,Oscar Arpero
+10/22/2026,10/23/2026,"HOME DEPOT #1950","Home Depot",Other,Purchase,128.44,Oscar Arpero
+10/23/2026,10/23/2026,"CHIPOTLE 2231","Chipotle Mexican Grill",Restaurants,Purchase,"1,023.00",Kerissa Arpero
+10/23/2026,10/24/2026,"WALMART RETURN","Walmart",Grocery,Credit,-8.12,Kerissa Arpero
+10/24/2026,10/24/2026,"ACH DEPOSIT INTERNET TRANSFER","Apple Card",Payment,Payment,-500.00,Oscar Arpero
+9/28/2026,9/29/2026,"TARGET 0001","Target",Shopping,Purchase,23.45,Kerissa Arpero
