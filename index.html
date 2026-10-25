@@ -233,11 +233,11 @@ function vTodos(){let L=S.todos.slice();if(todoFilter==='mine')L=L.filter(t=>t.w
  return `<div class="seg">${[['all','All'],['mine','Mine']].map(([k,l])=>`<button data-tf="${k}" class="${todoFilter===k?'on':''}">${l}</button>`).join('')}</div>`+
  (L.map(t=>`<div class="card row ${t.done?'done':''}"><button class="chk n ${t.done?'on':''}" data-done="${t.id}"></button><div data-edit="${t.id}"><div class="tt">${t.fixId?'🔧 ':''}${esc(t.title)}</div><div class="sub">${t.who==='both'?'Both':nm(t.who)} ${dueTxt(t.due)} ${repTag(t)}${t.done?' · done by '+nm(t.doneBy):''}${t.rep&&t.lastBy?` · last done by ${esc(nm(t.lastBy))}`:''}</div></div></div>`).join('')||'<p class="sub">No to-dos yet. Tap ＋ Add.</p>')}
 function itemStock(i){return+(i.qty||0)}
-function vPantry(){if(S.pantrySeg==='shop')return segP()+vShop();const L=S.items.slice().sort((a,b)=>a.name.localeCompare(b.name));
- return segP()+`<button class="s" id="scanBtn" style="width:100%;margin-top:6px">📷 Scan a receipt</button>`+
+function vPantry(){if(S.pantrySeg==='shop')return segP()+vShop();const L=S.items.filter(i=>!(i.leftover&&(i.finished||itemStock(i)<=0))).sort((a,b)=>a.name.localeCompare(b.name)),nFin=S.items.filter(i=>i.leftover&&(i.finished||itemStock(i)<=0)).length;
+ return segP()+(nFin?`<p class="sub" style="margin:6px 4px">${nFin} finished leftover${nFin>1?'s':''} hidden</p>`:'')+`<button class="s" id="scanBtn" style="width:100%;margin-top:6px">📷 Scan a receipt</button>`+
  (L.map(i=>{const low=i.min&&itemStock(i)<=i.min,exp=i.exp&&i.exp<=today();
   return `<div class="card"><div class="row"><div data-item="${i.id}"><b>${esc(i.name)}</b><div class="sub">${+itemStock(i).toFixed(2)} ${esc(i.unit)} ${low?'<span class="pill hi">Low</span>':''}${i.exp?`<span class="pill ${exp?'hi':''}">exp ${i.exp.slice(5)}</span>`:''}</div></div>
-  <button class="s n" data-use="${i.id}">Used</button><button class="s n" data-buy="${i.id}">Bought</button></div></div>`}).join('')||'<p class="sub">Pantry is empty. Scan a receipt or tap ＋ Add.</p>')}
+  ${i.leftover?`<button class="s n" data-use="${i.id}">Ate some</button><button class="s" data-ateall="${i.id}">Ate it all</button>`:`<button class="s n" data-use="${i.id}">Used</button><button class="s n" data-buy="${i.id}">Bought</button>`}</div></div>`}).join('')||'<p class="sub">Pantry is empty. Scan a receipt or tap ＋ Add.</p>')}
 function vFix(){const L=S.fixes.slice().sort((a,b)=>(a.status==='fixed')-(b.status==='fixed')||b.at-a.at);
  const pr={high:'hi',med:'md',low:'lo'};
  return (S.me==='oscar'&&'Notification'in window&&Notification.permission==='default'?'<button class="s" id="notif" style="width:100%">🔔 Alert me on new requests</button>':'')+
@@ -311,9 +311,11 @@ function editItem(i={}){sheet(`<h2>${i.id?'Edit':'New'} item</h2><label>Name</la
   const pr=save('items',{id,cat:$('#fc').value,name:val('fn'),qty:q,unit:val('fu')||'ea',min:+val('fm')||0,exp:$('#fe').value,store:st,paid:pp||0,boughtOn:pp?bo:'',...(pp&&q?{ucost:Math.round(pp/q*1000)/1000}:{})});
   if(!i.rcpt){if(pp)fw(save('spend',{id:sid,kind:'hh',who:S.me,cat:'groceries',amt:pp,note:'🛒 '+val('fn')+(st?' · '+st:''),item:id,src:'item',date:bo,at:Date.parse(bo+'T12:00'),ym:bo.slice(0,7)}));else if(S.spend.some(x=>x.id===sid))fw(del('spend',sid))}return pr});
  if(i.id){$('#iop').onclick=()=>{close();markOpened(i)};$('#ifz').onclick=()=>{close();moveTo(i,'freezer')};$('#idel').onclick=()=>{fw(del('items',i.id));if(S.spend.some(x=>x.id==='it_'+i.id))fw(del('spend','it_'+i.id));close()};$('#wst').onclick=()=>qtyLog(i,'wasted')}}
-function qtyLog(i,type){const L={used:'Used',bought:'Bought',wasted:'Wasted / expired'}[type];
+function qtyLog(i,type){const L={used:i.leftover?'Ate some':'Used',bought:'Bought',wasted:'Wasted / expired'}[type];
  sheet(`<h2>${L}: ${esc(i.name)}</h2><label>Amount (${esc(i.unit)})</label><input id="lq" type="number" inputmode="decimal" value="1">${type==='bought'?'<label>Price paid ($)</label><input id="lp" type="number" inputmode="decimal"><label>New expiry (optional)</label><input id="le" type="date">':''}`,
  async()=>{const q=+val('lq');if(!q)return false;const pts=await logQty(i,type,q,type==='bought'?+val('lp')||0:0,type==='bought'?$('#le').value:'');if(pts)celebrate(pts)})}
+const ateBusy={};async function ateAll(i){if(!i||ateBusy[i.id])return;ateBusy[i.id]=1;const q=itemStock(i);
+ try{await fw(save('items',{...i,qty:0,finished:true,finishedAt:Date.now(),finishedBy:S.me}));if(q>0)fw(save('logs',{id:uid(),item:i.id,type:'used',qty:q,price:0,by:S.me,at:Date.now(),beforeExp:!!(i.exp&&today()<=i.exp)}));celebrate('Leftovers finished 👍')}catch(e){}finally{setTimeout(()=>delete ateBusy[i.id],1500)}}
 async function logQty(i,type,q,price=0,exp=''){const before=type==='used'&&i.exp&&today()<=i.exp;
  const nq=Math.max(0,+(itemStock(i)+(type==='bought'?q:-q)).toFixed(3));
  await save('items',{...i,qty:nq,...(exp?{exp}:type==='bought'?{exp:freshExp(i)}:{})});
@@ -364,6 +366,7 @@ function bind(){const m=$('#main'),on=(sel,fn)=>m.querySelectorAll(sel).forEach(
   await save('todos',{...t,done:d,doneBy:d?S.me:null,doneAt:d?Date.now():null});if(d)celebrate(P.todo)});
  on('[data-edit]',e=>editTodo(S.todos.find(x=>x.id===e.dataset.edit)));
  on('[data-item]',e=>editItem(S.items.find(x=>x.id===e.dataset.item)));
+ on('[data-ateall]',e=>ateAll(S.items.find(x=>x.id===e.dataset.ateall)));
  on('[data-use]',e=>qtyLog(S.items.find(x=>x.id===e.dataset.use),'used'));
  on('[data-buy]',e=>qtyLog(S.items.find(x=>x.id===e.dataset.buy),'bought'));
  on('[data-fs]',e=>{const f=S.fixes.find(x=>x.id===e.dataset.fs);save('fixes',{...f,status:'prog'})});
@@ -623,7 +626,7 @@ const dLabel=d=>d<0?`${-d} day${d<-1?'s':''} past`:d===0?'Today':d===1?'Tomorrow
 const LOCN={fridge:'Fridge',pantry:'Pantry',freezer:'Freezer'};
 function useSoonCard(){const L=soonItems(3);if(!L.length)return'';
  return `<div class="sec" style="margin:22px 4px 10px"><h2 style="margin:0">Use soon</h2><a href="#" data-go="dinner">Dinner ideas</a></div><div class="card flat">${L.slice(0,8).map(i=>{const d=daysTo(i.exp);
-  return `<div class="usr"><div style="flex:1;min-width:0" data-item="${i.id}"><div class="ut">${esc(i.name)}</div><div class="sub"><span class="${d<=1?'dred':''}">${dLabel(d)}</span> · ${LOCN[i.loc]||'—'}${i.baby?' · Baby':''}</div></div><button class="s n sm" data-us-use="${i.id}">Used</button><button class="s n sm" data-us-more="${i.id}">More</button><button class="s n sm" data-us-waste="${i.id}">Tossed</button></div>`}).join('')}</div>`}
+  return `<div class="usr"><div style="flex:1;min-width:0" data-item="${i.id}"><div class="ut">${esc(i.name)}</div><div class="sub"><span class="${d<=1?'dred':''}">${dLabel(d)}</span> · ${LOCN[i.loc]||'—'}${i.baby?' · Baby':''}</div></div>${i.leftover?`<button class="s sm" data-ateall="${i.id}">Ate it all</button>`:`<button class="s n sm" data-us-use="${i.id}">Used</button>`}<button class="s n sm" data-us-more="${i.id}">More</button><button class="s n sm" data-us-waste="${i.id}">Tossed</button></div>`}).join('')}</div>`}
 async function markOpened(i){const s=i.btype?2:Math.min(shelfFor(i.name,i.cat,'fridge').days||5,7);const ne=addDays(today(),s);await save('items',{...i,loc:i.loc==='pantry'?'fridge':i.loc,exp:i.exp&&i.exp<ne?i.exp:ne,opened:today()});celebrate('Opened · use by '+ne.slice(5))}
 async function moveTo(i,loc){const d=loc==='freezer'?(i.btype?30:shelfFor(i.name,i.cat,'freezer').days||90):shelfFor(i.name,i.cat,loc).days;await save('items',{...i,loc,exp:addDays(today(),d)});celebrate((LOCN[loc])+' · good till '+addDays(today(),d).slice(5))}
 async function tossed(i){const q=itemStock(i);if(!q)return;await logQty(i,'wasted',q);celebrate('Logged as waste')}
@@ -1153,6 +1156,7 @@ function bindExtra(on){bindSpend(on);bindHB(on);
  on('#tourGo',()=>{localStorage.hintDone=1;S.tab='more';S.sub='guide';S.gopen=0;R();scrollTo(0,0)});
  {const g=$('#main').querySelector('#gq');if(g)g.oninput=()=>{S.gq=g.value;const c=g.selectionStart;R();const n=$('#gq');n.focus();n.setSelectionRange(c,c)}}
 
+ on('[data-ateall]',e=>ateAll(S.items.find(x=>x.id===e.dataset.ateall)));
  on('[data-us-use]',e=>qtyLog(S.items.find(x=>x.id===e.dataset.usUse),'used'));
  on('[data-us-more]',e=>itemMore(S.items.find(x=>x.id===e.dataset.usMore)));
  on('[data-us-waste]',e=>tossed(S.items.find(x=>x.id===e.dataset.usWaste)));

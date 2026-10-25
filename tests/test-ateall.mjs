@@ -1,0 +1,18 @@
+import puppeteer from 'puppeteer-core';
+const b=await puppeteer.launch({executablePath:'/usr/bin/google-chrome',headless:'new',args:['--no-sandbox']});
+const p=await b.newPage();await p.setViewport({width:375,height:667,deviceScaleFactor:2,isMobile:true,hasTouch:true});
+const errs=[];p.on('pageerror',e=>errs.push(e.message));const W=ms=>new Promise(r=>setTimeout(r,ms||500));
+await p.goto('http://127.0.0.1:8833/',{waitUntil:'networkidle0'});await p.evaluate(()=>localStorage.removeItem('__D'));
+await p.evaluate(async()=>{const m=await import('./test-mock/firebase-firestore.js');const t=new Date();t.setDate(t.getDate()+2);const e=t.toISOString().slice(0,10);
+await m.setDoc({c:'families/arpero/items',id:'l1'},{id:'l1',name:'Leftover Chicken tacos',qty:3,unit:'servings',leftover:true,exp:e,cat:'Other',loc:'fridge'});
+await m.setDoc({c:'families/arpero/items',id:'l2'},{id:'l2',name:'Leftover Spaghetti',qty:2,unit:'servings',leftover:true,exp:e,cat:'Other',loc:'fridge'});
+await m.setDoc({c:'families/arpero/items',id:'m1'},{id:'m1',name:'Milk',qty:1,unit:'gal'})});
+await p.reload({waitUntil:'networkidle0'});await W(1000);
+console.log('home ateall btns',await p.$$eval('[data-ateall]',x=>x.length));
+await p.screenshot({path:'/workspace/arpero-home/shots/34-leftovers-home.png'});
+await p.evaluate(()=>{const x=document.querySelector('[data-ateall="l1"]');x.click();x.click()});await W(800);
+console.log('home after',await p.$$eval('[data-ateall]',x=>x.map(e=>e.dataset.ateall)));
+await p.evaluate(()=>[...document.querySelectorAll('nav button,nav a')].find(x=>/Groceries/.test(x.innerText)).click());await W(600);await p.evaluate(()=>[...document.querySelectorAll('.seg button')].find(x=>/Pantry|Stock|Have/i.test(x.innerText))?.click());await W(800);
+console.log('pantry',await p.$eval('#main',e=>e.innerText.slice(0,400).replace(/\n/g,' | ')));
+await p.screenshot({path:'/workspace/arpero-home/shots/35-leftovers-pantry.png'});
+console.log(JSON.stringify(await p.evaluate(()=>[window.__D['families/arpero/items'].l1,Object.values(window.__D['families/arpero/logs']||{})])),'ERR',errs);await b.close();
