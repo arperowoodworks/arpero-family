@@ -128,7 +128,7 @@ const OSCAR='oskararpero@gmail.com';
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 const today=()=>new Date().toLocaleDateString('en-CA'),uid=()=>Math.random().toString(36).slice(2,10);
 const col=n=>F.collection(db,'families','arpero',n),dref=(n,id)=>F.doc(db,'families','arpero',n,id);
-const S={cooks:[],rcptmap:{},todos:[],items:[],logs:[],fixes:[],meta:{names:{oscar:'Oscar',wife:'Kerissa'}},tab:'home',sub:null,pantrySeg:'stock',meals:[],chores:[],rewards:[],maint:[],ideas:[],dates:[],shop:[],shouts:[],babies:[],blog:[],events:[],spend:[],wait:[],bills:[],me:null,cmp:'week',grocmem:{},gstore:localStorage.gstore||'all',seenFix:+localStorage.seenFix||0,bsel:localStorage.bsel||''};
+const S={bsched:[],cooks:[],rcptmap:{},todos:[],items:[],logs:[],fixes:[],meta:{names:{oscar:'Oscar',wife:'Kerissa'}},tab:'home',sub:null,pantrySeg:'stock',meals:[],chores:[],rewards:[],maint:[],ideas:[],dates:[],shop:[],shouts:[],babies:[],blog:[],events:[],spend:[],wait:[],bills:[],me:null,cmp:'week',grocmem:{},gstore:localStorage.gstore||'all',seenFix:+localStorage.seenFix||0,bsel:localStorage.bsel||''};
 {const g=new URLSearchParams(location.search).get('go');if(g==='fix')S.tab='fix';else if(['dinner','week','baby','spend','budget'].includes(g)){S.tab='more';S.sub=g}else if(g)S.tab='home'}
 if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.go){const g=e.data.go;S.tab=g==='fix'?'fix':['dinner','week','baby','spend','budget'].includes(g)?'more':'home';S.sub=['dinner','week','baby','spend','budget'].includes(g)?g:null;typeof R==='function'&&R();scrollTo(0,0)}});
 const who=e=>(e||'').toLowerCase()===OSCAR?'oscar':'wife',nm=k=>{const v=S.meta.names?.[k];return (v&&v!=='Wife'?v:0)||({oscar:'Oscar',wife:'Kerissa'})[k]||k};
@@ -162,7 +162,7 @@ A.onAuthStateChanged(auth,u=>{unsubs.forEach(f=>f());unsubs=[];
  retried=0;S.me=who(u.email);$('#login').hidden=true;$('#app').hidden=false;setTimeout(afterLinkSheet,300);startListeners(u)});
 function startListeners(u){unsubs.forEach(f=>f());unsubs=[];if(!u)return;setTimeout(refreshSub,2500);
  if(!calApi){import('./cal.js?v=10').then(m=>{calApi=m.initCal({db,F,me:S.me,el:calEl,app:'family',names:{oscar:nm('oscar'),wife:nm('wife')}});if(S.tab==='cal')R()})}
- for(const n of ['todos','items','logs','fixes','meals','chores','rewards','maint','ideas','dates','shop','shouts','babies','blog','events','spend','wait','bills','cooks'])unsubs.push(F.onSnapshot(col(n),s=>{S[n]=s.docs.map(d=>d.data());if(n==='fixes')notifyFix();R()},err=>denied(err)));
+ for(const n of ['todos','items','logs','fixes','meals','chores','rewards','maint','ideas','dates','shop','shouts','babies','blog','events','spend','wait','bills','cooks','bsched'])unsubs.push(F.onSnapshot(col(n),s=>{S[n]=s.docs.map(d=>d.data());if(n==='fixes')notifyFix();R()},err=>denied(err)));
  unsubs.push(F.onSnapshot(dref('meta','ccmap'),s=>{S.ccmap=s.exists()?s.data():{}},()=>{}));unsubs.push(F.onSnapshot(dref('meta','rcptmap'),s=>{S.rcptmap=s.exists()?s.data():{}},()=>{}));unsubs.push(F.onSnapshot(dref('meta','grocmem'),s=>{S.grocmem=s.exists()?s.data():{};if(S.tab==='pantry')R()},()=>{}));
  unsubs.push(F.onSnapshot(dref('meta','settings'),s=>{if(s.exists())S.meta=s.data();if(!s.metadata?.fromCache)setTimeout(seedIdeas,1500);setTimeout(seedRewards,2000);R()},()=>{}));
 }
@@ -534,7 +534,7 @@ const TILES=[['week','🗓️','Meal plan'],['q:scan','📷','Scan receipt'],['q
  ['t:fix','📋','Fix It list'],['score','🏡','Team & settings']];
 function tilesGrid(){const fx=S.fixes.filter(f=>f.status!=='fixed').length,sh=lowItems().length+S.shop.filter(x=>!x.done).length,td=S.todos.filter(x=>!x.done&&(x.who===S.me||x.who==='both')).length;
  const badge={'t:shop':sh,'t:fix':fx,'t:todos':td};
- return `<div class="bigt">${BIGTILES.map(([k,l,d])=>`<button class="bt n" data-go="${k}"><span class="btl">${l}</span><span class="btd">${k==='budget'?hbTile():d}</span></button>`).join('')}</div><div class="tiles">${TILES.map(([k,i,l])=>`<button class="tile n" ${k.startsWith('q:')?`data-q="${k.slice(2)}"`:`data-go="${k}"`}><span class="ti">${i}</span><span class="tl">${l}</span>${badge[k]?`<span class="tb">${badge[k]}</span>`:''}</button>`).join('')}</div>`}
+ return `<div class="bigt">${BIGTILES.map(([k,l,d])=>(d=k==="baby"&&!bLogOn()?"Schedule & alerts":d,`<button class="bt n" data-go="${k}"><span class="btl">${l}</span><span class="btd">${k==='budget'?hbTile():d}</span></button>`)).join('')}</div><div class="tiles">${TILES.map(([k,i,l])=>`<button class="tile n" ${k.startsWith('q:')?`data-q="${k.slice(2)}"`:`data-go="${k}"`}><span class="ti">${i}</span><span class="tl">${l}</span>${badge[k]?`<span class="tb">${badge[k]}</span>`:''}</button>`).join('')}</div>`}
 function vHome(){const t=today(),tm=stats(),g=goal(),pc=Math.min(100,Math.round(tm.wk/g*100));
  const todo=S.todos.filter(x=>!x.done&&(x.who===S.me||x.who==='both')&&(!x.due||x.due<=t)).sort((a,b)=>(a.due||'9')>(b.due||'9')?1:-1).slice(0,5);
  const doneToday=S.todos.filter(x=>x.done&&x.doneAt&&new Date(x.doneAt).toLocaleDateString('en-CA')===t).slice(0,3);
@@ -618,7 +618,7 @@ function shelfFor(name,cat,loc){const r=SL.find(x=>x[0].test(name||''));const a=
  loc=loc||a[3];let d=loc==='freezer'?a[2]:loc==='fridge'?a[1]:a[0];if(!d){loc=a[3];d=loc==='freezer'?a[2]:loc==='fridge'?a[1]:a[0]}return{loc,days:d||30}}
 function withExp(o){if(o&&o.name&&!o.loc&&o.exp)o={...o,loc:shelfFor(o.name,o.cat).loc};if(o&&!o.exp&&+o.qty>0&&o.name&&(o.cat||guessCat(o.name))!=='Household'){const b=o.btype&&BT.find(x=>x[0]===o.btype);const s=b?{days:b[1],loc:b[2]}:shelfFor(o.name,o.cat,o.loc);o={...o,exp:addDays(today(),s.days),loc:o.loc||s.loc}}return o}
 function freshExp(i){const b=i.btype&&BT.find(x=>x[0]===i.btype);return addDays(today(),b?b[1]:shelfFor(i.name,i.cat,i.loc).days)}
-const soonItems=(n=3)=>S.items.filter(i=>itemStock(i)>0&&i.exp&&daysTo(i.exp)<=n).sort((a,b)=>a.exp>b.exp?1:a.exp<b.exp?-1:0);
+const soonItems=(n=3)=>S.items.filter(i=>(bLogOn()||!i.baby)&&itemStock(i)>0&&i.exp&&daysTo(i.exp)<=n).sort((a,b)=>a.exp>b.exp?1:a.exp<b.exp?-1:0);
 const dLabel=d=>d<0?`${-d} day${d<-1?'s':''} past`:d===0?'Today':d===1?'Tomorrow':`${d} days`;
 const LOCN={fridge:'Fridge',pantry:'Pantry',freezer:'Freezer'};
 function useSoonCard(){const L=soonItems(3);if(!L.length)return'';
@@ -755,14 +755,52 @@ const dayOf=t=>new Date(t).toLocaleDateString('en-CA');
 const DEF_ROUTINE='07:00 Wake up\n08:00 Breakfast\n09:30 Nap\n12:00 Lunch\n13:30 Nap\n15:30 Snack\n17:30 Dinner\n18:30 Bath\n19:30 Bedtime';
 const routineOf=b=>String(b.routine||DEF_ROUTINE).split('\n').map(l=>{const m=l.trim().match(/^(\d{1,2}):(\d{2})\s*(.*)$/);return m&&{t:m[1].padStart(2,'0')+':'+m[2],what:m[3]||'—'}}).filter(Boolean).sort((a,b)=>a.t>b.t?1:-1);
 const t12=t=>{const[h,m]=t.split(':').map(Number);return `${(h%12)||12}:${String(m).padStart(2,'0')} ${h<12?'AM':'PM'}`};
-function upNext(b){const R=routineOf(b);if(!R.length)return null;const now=new Date().toTimeString().slice(0,5);return R.find(x=>x.t>now)||{...R[0],tomorrow:true}}
+function upNext(b){const R=S.bsched.length?bsFor(b).filter(x=>bsToday(x)).map(x=>({t:x.t,what:x.what})):routineOf(b);if(!R.length)return null;const now=new Date().toTimeString().slice(0,5);return R.find(x=>x.t>now)||{...R[0],tomorrow:true}}
 function glance(b){const f=blogOf(b,'feed')[0],s=blogOf(b,'sleep')[0],d=blogOf(b,'diaper')[0],run=running(b);
  const cell=(l,v,x)=>`<div class="gl"><div class="sub">${l}</div><div class="gv">${v}</div><div class="sub">${x||''}</div></div>`;
  return `<div class="glance">${cell('Last fed',f?ago(f.at):'—',f?esc(f.food||''):'')}${run?cell(run.nap?'Napping':'Sleeping',dur(Date.now()-run.start),'since '+hm12(run.start)):cell('Last nap',s?ago(s.end||s.start):'—',s&&s.end?dur(s.end-s.start):'')}${cell('Last diaper',d?ago(d.at):'—',d?d.type:'')}</div>`}
-function babyHomeCard(){const L=babies();if(!L.length)return'';
+function babyHomeCard(){const L=babies();if(!L.length)return'';setTimeout(bsMigrate,800);
+ if(!bLogOn()){const U=bsUpcoming(3);return `<div class="sec" style="margin:22px 4px 10px"><h2 style="margin:0">Baby schedule</h2><a href="#" data-go="baby">Open</a></div><div class="card flat">${U.length?U.map(x=>`<div class="usr" data-go="baby"><span class="pd">${t12(x.t)}</span><div style="flex:1">${bsIcon(x.what)} ${esc(x.what)}<div class="sub">${esc(x.who)}${x.notify?' · 🔔':''}</div></div></div>`).join(''):'<p class="sub" style="margin:4px 0">Nothing else scheduled today.</p>'}</div>`}
  return `<div class="sec" style="margin:22px 4px 10px"><h2 style="margin:0">Baby</h2><a href="#" data-go="baby">Open</a></div><div class="card flat">${L.map(b=>{const n=upNext(b),f=blogOf(b,'feed')[0],run=running(b);
   return `<div class="usr" data-bopen="${b.id}"><span class="bav" style="background:${b.color||BCOL[0]}">${b.photo?`<img src="${b.photo}">`:esc((b.name||'?')[0])}</span><div style="flex:1;min-width:0"><div class="ut">${esc(b.name)}${n?` · <span class="sub">Up next: ${esc(n.what)} ${n.tomorrow?'tomorrow ':''}${t12(n.t)}</span>`:''}</div><div class="sub">${run?(run.nap?'Napping ':'Sleeping ')+dur(Date.now()-run.start):'Fed '+(f?ago(f.at):'—')}</div></div><span class="n sub">›</span></div>`}).join('')}</div>`}
-function vBaby(){const L=babies();if(!L.length)return `<div class="card flat" style="text-align:center;padding:28px 18px"><div class="ut">Add your baby</div><p class="sub">Name, birthday and an optional photo. Both of you see the same logs live.</p><button id="bAdd" style="width:100%">Add baby</button></div>`;
+// ---------- baby schedule (v29) ----------
+const bLogOn=()=>!!S.meta.babyLog;
+const BS_Q=[['🍼','Feeding'],['😴','Nap'],['🌙','Bedtime'],['💊','Medicine'],['☀️','Wake up'],['🛁','Bath'],['🥣','Meal'],['🍎','Snack']];
+const bsIcon=w=>{const s=String(w||'').toLowerCase();return /feed|bottle|milk|nurs/.test(s)?'🍼':/nap/.test(s)?'😴':/bed|sleep/.test(s)?'🌙':/med|vitamin|tylenol|drop|dose/.test(s)?'💊':/wake/.test(s)?'☀️':/bath/.test(s)?'🛁':/snack/.test(s)?'🍎':/breakfast|lunch|dinner|meal/.test(s)?'🥣':'⏰'};
+const bsFor=b=>S.bsched.filter(x=>x.baby===b.id||x.baby==='both').sort((x,y)=>x.t>y.t?1:x.t<y.t?-1:(x.ord||0)-(y.ord||0));
+const bsDays=d=>!d||!d.length||d.length===7?'Every day':d.length===5&&[1,2,3,4,5].every(x=>d.includes(x))?'Weekdays':d.length===2&&d.includes(0)&&d.includes(6)?'Weekends':d.slice().sort().map(x=>WD[x]).join(' ');
+const bsToday=(x,dw=new Date().getDay())=>!x.days||!x.days.length||x.days.includes(dw);
+const leadL=l=>!l?'at the time':l+' min before';
+function bsUpcoming(n=3){const now=new Date().toTimeString().slice(0,5),dw=new Date().getDay(),L=babies();
+ return S.bsched.filter(x=>x.on!==false&&bsToday(x,dw)&&x.t>now).sort((a,b)=>a.t>b.t?1:-1).slice(0,n).map(x=>({...x,who:x.baby==='both'?(L.length>1?'Both':L[0]?.name||''):(S.babies.find(b=>b.id===x.baby)||{}).name||''}))}
+async function bsMigrate(){if(S.meta.bsMig||!S.babies.length||S.bsched.length||bsMigrate.done)return;bsMigrate.done=1;
+ for(const b of S.babies){routineOf(b).forEach((x,i)=>fw(save('bsched',{id:'r_'+b.id+'_'+i,baby:b.id,t:x.t,what:x.what,days:[],notify:false,lead:0,ord:i,at:Date.now()})))}
+ fw(F.setDoc(dref('meta','settings'),{bsMig:Date.now()},{merge:true}))}
+function bsCard(b){const L=bsFor(b);return `<div class="card flat" id="bsList">${L.length?L.map(x=>`<div class="usr" data-bsed="${x.id}" style="cursor:pointer"><span class="pd">${t12(x.t)}</span><div style="flex:1;min-width:0">${bsIcon(x.what)} ${esc(x.what)}${x.baby==='both'&&babies().length>1?' <span class="pill">Both</span>':''}<div class="sub">${bsDays(x.days)}${x.notify?` · 🔔 ${leadL(x.lead)}`:' · 🔕 no alert'}</div></div><button class="s n sm" data-bsn="${x.id}" aria-label="Toggle alert" style="padding:6px 10px">${x.notify?'🔔':'🔕'}</button></div>`).join(''):'<p class="sub" style="margin:4px 0">No schedule yet. Add feedings, naps, bedtime or medicine times.</p>'}
+ <button id="bsAdd" style="width:100%;margin-top:10px">＋ Add to schedule</button><p class="sub" style="margin:8px 0 0">Tap an item to change or delete it. 🔔 sends a notification to both of your phones.</p></div>`}
+function bsSheet(x={},b=curBaby()){const L=babies(),days=new Set(x.days||[]);
+ sheet(`<h2>${x.id?'Edit':'Add to'} schedule</h2><div class="gchips">${BS_Q.map(([i,w])=>`<button class="mchip n" data-bsq="${w}">${i} ${w}</button>`).join('')}</div>
+ <label>What</label><input id="bsw" value="${esc(x.what||'')}" placeholder="Feeding, nap, vitamin D drops…"><label>Time</label><input id="bst" type="time" value="${x.t||''}">
+ ${L.length>1?`<label>For</label><select id="bsb">${L.map(y=>`<option value="${y.id}" ${(x.baby||b.id)===y.id?'selected':''}>${esc(y.name)}</option>`).join('')}<option value="both" ${x.baby==='both'?'selected':''}>Both babies</option></select>`:''}
+ <label>Which days</label><div style="display:flex;gap:4px" id="bsd">${WD.map((d,i)=>`<button class="${days.has(i)?'':'s'} n sm" data-bsday="${i}" style="flex:1;padding:6px 0;font-size:12px">${d}</button>`).join('')}</div><p class="sub" style="margin:4px 0 0">None picked = every day.</p>
+ <label class="chkrow"><input type="checkbox" id="bsno" ${x.id?(x.notify?'checked':''):'checked'}><span>Notify us</span></label><select id="bsl">${[0,5,10,15,30].map(l=>`<option value="${l}" ${(+x.lead||0)===l?'selected':''}>${l?l+' minutes before':'At the time'}</option>`).join('')}</select>
+ ${x.id?'<button class="d" id="bsdel" style="margin-top:12px">Delete</button>':''}`,
+ ()=>{const w=val('bsw'),t=$('#bst').value;if(!w)return 'Type what it is (or tap one above).';if(!t)return 'Pick a time.';
+  const d=[...document.querySelectorAll('[data-bsday]')].filter(e=>!e.classList.contains('s')).map(e=>+e.dataset.bsday);
+  return save('bsched',{id:x.id||uid(),baby:$('#bsb')?$('#bsb').value:(x.baby||b.id),what:w,t,days:d.length===7?[]:d,notify:$('#bsno').checked,lead:+$('#bsl').value||0,ord:x.ord||0,on:true,at:x.at||Date.now(),by:S.me})});
+ document.querySelectorAll('[data-bsq]').forEach(e=>e.onclick=()=>{$('#bsw').value=e.dataset.bsq});document.querySelectorAll('[data-bsday]').forEach(e=>e.onclick=()=>e.classList.toggle('s'));
+ if(x.id)$('#bsdel').onclick=()=>{if(confirm('Delete '+x.what+' at '+t12(x.t)+'?')){fw(del('bsched',x.id));close()}}}
+function bLogToggle(){const on=bLogOn();return `<div class="tgl" id="bLogT" style="margin-top:6px"><span>Baby log<br><span class="sub">Feedings, diapers, naps, medicine, foods and baby food stock. Off keeps just the schedule.</span></span><b class="${on?'on':''}"></b></div>`}
+function bPushNote(){const ok='Notification' in window&&Notification.permission==='granted';return ok?'':`<p class="sub" style="margin:8px 4px 0">🔔 To get alerts on this phone, add the app to your Home Screen and allow notifications (Today › Get a gentle reminder › Allow).</p>`}
+function vBabySimple(){const L=babies(),b=curBaby(),td=today(),n=bsUpcoming(10).find(x=>x.baby===b.id||x.baby==='both');
+ const ev=(S.events||[]).filter(e=>e.kind==='baby'&&e.baby===b.id&&String(e.s).slice(0,10)>=td).sort((x,y)=>x.s>y.s?1:-1).slice(0,4);
+ return `${L.length>1?`<div class="seg">${L.map(x=>`<button data-bsel="${x.id}" class="${x.id===b.id?'on':''}">${esc(x.name)}</button>`).join('')}</div>`:''}
+ <div class="bhead" data-bedit="${b.id}"><span class="bav lg" style="background:${b.color||BCOL[0]}">${b.photo?`<img src="${b.photo}">`:esc((b.name||'?')[0])}</span><div style="flex:1"><div class="ut" style="font-size:20px">${esc(b.name)}</div><div class="sub">${bAge(b)}${n?` · Next: ${esc(n.what)} ${t12(n.t)}`:''}</div></div></div>
+ <h2>Daily schedule</h2>${bsCard(b)}${bPushNote()}
+ <h2>Doctor & vaccines</h2><div class="card flat">${ev.map(e=>`<div class="usr"><span class="pd">${new Date(String(e.s).slice(0,10)+'T12:00').toLocaleDateString('en',{month:'short',day:'numeric'})}</span><div style="flex:1">${esc(e.title)}<div class="sub">${e.allDay?'':t12(String(e.s).slice(11,16))}${e.remind?' · reminder on':''}</div></div></div>`).join('')||'<p class="sub" style="margin:4px 0">Nothing coming up.</p>'}<button class="s" id="bVisit" style="width:100%;margin-top:10px">＋ Doctor visit / vaccine</button></div>
+ <h2>Settings</h2><div class="card flat">${bLogToggle()}</div>
+ <button class="s" id="bAdd" style="width:100%;margin-top:16px">Add another baby</button>`}
+function vBaby(){const L=babies();if(L.length&&!bLogOn())return vBabySimple();if(!L.length)return `<div class="card flat" style="text-align:center;padding:28px 18px"><div class="ut">Add your baby</div><p class="sub">Name, birthday and an optional photo. Both of you see the same logs live.</p><button id="bAdd" style="width:100%">Add baby</button></div>`;
  const b=curBaby(),run=running(b),td=today(),T=S.blog.filter(x=>x.baby===b.id&&dayOf(x.at||x.start)===td).sort((x,y)=>(y.at||y.start)-(x.at||x.start));
  const feeds=T.filter(x=>x.kind==='feed'),fruit=feeds.filter(x=>isFruit(x.food)).length,dia=T.filter(x=>x.kind==='diaper'),sl=S.blog.filter(x=>x.baby===b.id&&x.kind==='sleep'&&x.end&&dayOf(x.end)===td).reduce((a,x)=>a+(x.end-x.start),0);
  const n=upNext(b),icon={feed:'🍼',diaper:'💧',med:'💊',sleep:'😴',react:'⚠️'};
@@ -774,7 +812,7 @@ function vBaby(){const L=babies();if(!L.length)return `<div class="card flat" st
  const mx=Math.max(1,...wk.map(w=>w.feeds));
  const ev=(S.events||[]).filter(e=>e.kind==='baby'&&e.baby===b.id&&String(e.s).slice(0,10)>=td).sort((x,y)=>x.s>y.s?1:-1).slice(0,4);
  return `${L.length>1?`<div class="seg">${L.map(x=>`<button data-bsel="${x.id}" class="${x.id===b.id?'on':''}">${esc(x.name)}</button>`).join('')}</div>`:''}
- <div class="bhead" data-billedit="${b.id}"><span class="bav lg" style="background:${b.color||BCOL[0]}">${b.photo?`<img src="${b.photo}">`:esc((b.name||'?')[0])}</span><div style="flex:1"><div class="ut" style="font-size:20px">${esc(b.name)}</div><div class="sub">${bAge(b)}${n?` · Up next: ${esc(n.what)} ${t12(n.t)}`:''}</div></div><span class="sub">Edit</span></div>
+ <div class="bhead" data-bedit="${b.id}"><span class="bav lg" style="background:${b.color||BCOL[0]}">${b.photo?`<img src="${b.photo}">`:esc((b.name||'?')[0])}</span><div style="flex:1"><div class="ut" style="font-size:20px">${esc(b.name)}</div><div class="sub">${bAge(b)}${n?` · Up next: ${esc(n.what)} ${t12(n.t)}`:''}</div></div><span class="sub">Edit</span></div>
  ${glance(b)}
  <div class="bgrid big6"><button data-blog="feed">Feeding</button><button class="${run&&run.nap?'':'s'}" data-blog="nap">${run&&run.nap?'Stop nap '+dur(Date.now()-run.start):'Start nap'}</button>
  <button class="${run&&!run.nap?'':'s'}" data-blog="sleep">${run&&!run.nap?'Stop sleep '+dur(Date.now()-run.start):'Start sleep'}</button><button class="s" data-blog="diaper">Diaper</button>
@@ -786,8 +824,8 @@ function vBaby(){const L=babies();if(!L.length)return `<div class="card flat" st
  <h2>New foods</h2><div class="card flat">${tried.size?[...tried.values()].reverse().slice(0,30).map(t=>{const al=allergenOf(t.food),rx=reacts.filter(r=>gkey(r.food)===gkey(t.food));return `<div class="usr"><div style="flex:1">${esc(t.food)} ${al?`<span class="pill hi">${al}</span>`:''}${rx.length?' <span class="pill hi">Reaction</span>':''}<div class="sub">First ${new Date(t.first).toLocaleDateString('en',{month:'short',day:'numeric'})} · ${t.n}× · ${Object.entries(t.how).filter(([k])=>k&&k!=='undefined').map(([k,v])=>k+' '+v).join(', ')}</div></div><button class="s n sm" data-breact="${esc(t.food)}">Reaction</button></div>`}).join(''):'<p class="sub" style="margin:0">Foods show here after the first feeding log. Common allergens are flagged.</p>'}</div>
  <h2>Baby food stock</h2><div class="card flat">${stock.length?stock.map(i=>`<div class="usr"><div style="flex:1;min-width:0" data-item="${i.id}">${esc(i.name)}<div class="sub">${+itemStock(i).toFixed(2)} ${esc(i.unit)} · ${esc(i.btype||'')}${i.exp?` · <span class="${daysTo(i.exp)<=1?'dred':''}">${dLabel(daysTo(i.exp))}</span>`:''}</div></div><button class="s n sm" data-us-use="${i.id}">Used</button><button class="s n sm" data-us-waste="${i.id}">Tossed</button></div>`).join(''):'<p class="sub" style="margin:0">Add jars, pouches, purees and fruit. They show in Use soon and go to the grocery list when low.</p>'}<button class="s" id="bStock" style="width:100%;margin-top:10px">Add baby food stock</button></div>
  <h2>Doctor & vaccines</h2><div class="card flat">${ev.map(e=>`<div class="usr"><span class="pd">${new Date(String(e.s).slice(0,10)+'T12:00').toLocaleDateString('en',{month:'short',day:'numeric'})}</span><div style="flex:1">${esc(e.title)}<div class="sub">${e.allDay?'':t12(String(e.s).slice(11,16))}${e.remind?' · reminder on':''}</div></div></div>`).join('')||'<p class="sub" style="margin:0">No visits scheduled.</p>'}<button class="s" id="bVisit" style="width:100%;margin-top:10px">Add doctor visit or vaccine</button></div>
- <h2>Routine</h2><div class="card flat">${routineOf(b).map(x=>`<div class="usr"><span class="pd">${t12(x.t)}</span><div style="flex:1">${esc(x.what)}</div></div>`).join('')}<button class="s" id="bRoutine" style="width:100%;margin-top:10px">Edit routine</button></div>
- <h2>Reminders</h2>${babyRemCard()}
+ <h2>Daily schedule</h2>${bsCard(b)}${bPushNote()}
+ <h2>Reminders</h2>${babyRemCard()}<h2>Settings</h2><div class="card flat">${bLogToggle()}</div>
  <button class="s" id="bAdd" style="width:100%;margin-top:16px">Add another baby</button>`}
 function babyRemCard(){const r=(S.meta.babyN||{})[S.me]||{};return `<div class="card flat"><div class="usr"><div style="flex:1">Feeding reminder<div class="sub">Notifies you when it's been a while since the last feeding. Off by default.</div></div><button class="${r.feed?'':'s'} n sm" id="bnFeed">${r.feed?'On':'Off'}</button></div>
  <div class="usr"><div style="flex:1">Every</div><select id="bnH" style="width:130px">${[2,2.5,3,3.5,4,5].map(h=>`<option ${+(r.h||3)===h?'selected':''} value="${h}">${h} hours</option>`).join('')}</select></div>
@@ -1130,7 +1168,7 @@ function bindExtra(on){bindSpend(on);bindHB(on);
  on('[data-bsel]',e=>{S.bsel=localStorage.bsel=e.dataset.bsel;R()});on('[data-bopen]',e=>{S.bsel=localStorage.bsel=e.dataset.bopen;S.tab='more';S.sub='baby';R();scrollTo(0,0)});
  on('[data-blog]',e=>{const b=curBaby(),k=e.dataset.blog;({feed:()=>feedSheet(b),nap:()=>toggleSleep(b,true),sleep:()=>toggleSleep(b,false),diaper:()=>diaperSheet(b),med:()=>medSheet(b),react:()=>reactSheet(b)})[k]()});
  on('[data-breact]',e=>reactSheet(curBaby(),e.dataset.breact));on('[data-bdel]',e=>{if(confirm('Delete this log?'))del('blog',e.dataset.bdel)});
- on('#bStock',stockSheet);on('#bVisit',()=>visitSheet(curBaby()));on('#bRoutine',()=>routineSheet(curBaby()));
+ on('#bStock',stockSheet);on('#bsAdd',()=>bsSheet());on('[data-bsed]',e=>bsSheet(S.bsched.find(x=>x.id===e.dataset.bsed)));$('#main').querySelectorAll('[data-bsn]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();const x=S.bsched.find(y=>y.id===e.dataset.bsn);fw(save('bsched',{...x,notify:!x.notify}));celebrate(x.notify?'🔕 Alert off':'🔔 Alert on')});on('#bLogT',()=>{const v=!bLogOn();S.meta.babyLog=v;fw(F.setDoc(dref('meta','settings'),{babyLog:v},{merge:true}));R();celebrate(v?'Baby log on':'Baby log off')});on('#bVisit',()=>visitSheet(curBaby()));on('#bRoutine',()=>routineSheet(curBaby()));
  on('#bnFeed',()=>saveBabyN({feed:!((S.meta.babyN||{})[S.me]||{}).feed,h:+$('#bnH').value}));on('#bnNap',()=>saveBabyN({nap:!((S.meta.babyN||{})[S.me]||{}).nap,awake:+$('#bnA').value}));
  {const a=$('#main').querySelector('#bnH'),b=$('#main').querySelector('#bnA');if(a)a.onchange=()=>saveBabyN({h:+a.value});if(b)b.onchange=()=>saveBabyN({awake:+b.value})}
 
